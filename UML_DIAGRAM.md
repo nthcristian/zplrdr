@@ -12,24 +12,27 @@ classDiagram
 
     class PresetFieldManager {
         <<interface>>
-        +validateFor(Map~String, String~ fields) throws FieldValidationException
+        +validateFor(Map~String, String~ fields)
         +getDefaultValueFor(String field) Object
     }
 
     %% Value Objects / Records (document package)
     class PDFDocument {
         <<record>>
-        +String data
+        +byte[] data
+        +String sourceId
     }
 
     class ZPLDocument {
         <<record>>
         +String data
+        +String sourceId
     }
 
     class ZPLLabel {
         <<record>>
         +String data
+        +String sourceId
     }
 
     %% Domain models (preset.util package)
@@ -45,17 +48,34 @@ classDiagram
         -String storeFolderPath
         +PresetFileStore(String storeFolderPath)
         +load(String presetName) Map~String, String~
-        +save(Map~String, String~ fields)
+        +save(Preset preset)
+    }
+
+    %% Configuration
+    class LabelaryConfig {
+        <<record>>
+        +String baseUrl
+        +String apiKey
     }
 
     %% Error handling
     class FieldValidationException {
-        +FieldValidationException()
+        +FieldValidationException(String message)
+    }
+    
+    class ConversionException {
+        +ConversionException(String message, Throwable cause)
+    }
+
+    class PresetNotFoundException {
+        +PresetNotFoundException(String message)
     }
 
     %% Labelary implementation (labelary package)
     class LabelaryConversionDriver {
         -static final int BATCH_SIZE
+        -LabelaryConfig config
+        +LabelaryConversionDriver(LabelaryConfig config)
         +requestConversion(ZPLDocument[], Preset) PDFDocument[]
         -splitIntoBatches(ZPLDocument) ZPLLabel[]
         -sendBatch(ZPLLabel[])
@@ -78,7 +98,7 @@ classDiagram
         -ConversionDriver conversionDriver
         +DocumentConverter(ConversionDriver)
         +convert(InputStream[], Preset) PDFDocument[]
-        -validateFiles(String[]) ZPLDocument[]
+        -validateAndParse(InputStream[]) ZPLDocument[]
     }
 
     class PresetManager {
@@ -105,10 +125,17 @@ classDiagram
     PresetManager --> PresetFileStore : uses
     PresetManager --> Preset : manages
 
-    PresetFieldManager ..> FieldValidationException : throws
     PresetFileStore ..> Preset : loads/saves
 
+    LabelaryConversionDriver --> LabelaryConfig : uses
     LabelaryConversionDriver ..> ZPLLabel : splits into
     LabelaryConversionDriver ..> PDFDocument : returns
 
+    %% Exceptions
+    ConversionDriver ..> ConversionException : throws
+    PresetManager ..> PresetNotFoundException : throws
+    PresetManager ..> FieldValidationException : throws
+    
     FieldValidationException --|> Exception : extends
+    ConversionException --|> Exception : extends
+    PresetNotFoundException --|> Exception : extends
