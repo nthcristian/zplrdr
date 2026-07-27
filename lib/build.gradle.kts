@@ -26,6 +26,18 @@ dependencies {
 
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation(libs.guava)
+
+    // Jakarta Bean Validation (specification)
+    api(libs.jakarta.validation.api)
+
+    // Hibernate Validator (reference implementation)
+    runtimeOnly(libs.hibernate.validator)
+
+    // Jakarta Expression Language (required by Hibernate Validator)
+    runtimeOnly(libs.jakarta.el)
+
+    // Jackson (JSON serialization/deserialization)
+    implementation(libs.jackson.databind)
 }
 
 // Apply a specific Java toolchain to ease working on different environments.

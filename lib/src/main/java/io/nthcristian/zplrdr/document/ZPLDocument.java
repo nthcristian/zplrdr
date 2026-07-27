@@ -1,4 +1,6 @@
 package io.nthcristian.zplrdr.document;
 
-public record ZPLDocument(byte[] data) {
+import jakarta.validation.constraints.NotNull;
+
+public record ZPLDocument(@NotNull byte[] data) {
 }

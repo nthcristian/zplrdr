@@ -1,4 +1,6 @@
 package io.nthcristian.zplrdr.document;
 
-public record PDFDocument(byte[] data) {
+import jakarta.validation.constraints.NotNull;
+
+public record PDFDocument(@NotNull byte[] data) {
 }
