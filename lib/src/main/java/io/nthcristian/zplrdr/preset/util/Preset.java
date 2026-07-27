@@ -13,7 +13,7 @@ public record Preset(String name, Map<String, String> fields) {
         return null;
     }
 
-    public Preset setFieldValue(String field) {
+    public Preset setFieldValue(String field, String value) {
         // TODO
         return null;
     }

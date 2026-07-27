@@ -7,12 +7,12 @@ classDiagram
     %% Interfaces (contract package)
     class ConversionDriver {
         <<interface>>
-        +requestConversion(ZPLDocument[], MappedPreset) PDFDocument[]
+        +requestConversion(ZPLDocument[], Preset) PDFDocument[]
     }
 
     class PresetFieldManager {
         <<interface>>
-        +getFields() Map~String, Boolean~
+        +validateFor(Map~String, String~ fields)
         +getDefaultValueFor(String field) Object
     }
 
@@ -34,19 +34,11 @@ classDiagram
 
     %% Domain models (preset.util package)
     class Preset {
-        -String name
-        -PresetParser presetParser
-        +Preset(String name, PresetParser)
-        +getFieldValue(String field) String
-        +setFieldValue(String field, String value)
-        +toMappedPreset() MappedPreset
-    }
-
-    class MappedPreset {
         <<record>>
-        +Map~String, String~ map
-        +getFieldValue(String key) String
-        +getFields() String[]
+        +String name
+        +Map~String, String~ fields
+        +getFieldValue(String field) String
+        +setFieldValue(String field, String value) Preset
     }
 
     class PresetParser {
@@ -54,21 +46,26 @@ classDiagram
         +PresetParser(String presetFolderPath)
         +getFieldValue(String presetName, String field) String
         +setFieldValue(String presetName, String field, String value)
-        +getFields(String presetName) String[]
+        +getMapped(String presetName) Map~String, String~
+    }
+
+    %% Error handling
+    class FieldValidationException {
+        +FieldValidationException()
     }
 
     %% Labelary implementation (labelary package)
     class LabelaryConversionDriver {
-        -final static int BATCH_SIZE
-        +requestConversion(ZPLDocument[], MappedPreset) PDFDocument[]
+        -static final int BATCH_SIZE
+        +requestConversion(ZPLDocument[], Preset) PDFDocument[]
         -splitIntoBatches(ZPLDocument) ZPLLabel[]
         -sendBatch(ZPLLabel[])
     }
 
     class LabelaryPresetFieldManager {
         -Map~String, FieldDefinition~ fields
-        +getFields() Map~String, Boolean~
         +getDefaultValueFor(String field) Object
+        +validateFor(Map~String, String~ fields)
     }
 
     class FieldDefinition {
@@ -81,7 +78,7 @@ classDiagram
     class DocumentConverter {
         -ConversionDriver conversionDriver
         +DocumentConverter(ConversionDriver)
-        +convert(File[], MappedPreset) PDFDocument[]
+        +convert(InputStream[], Preset) PDFDocument[]
         -validateFiles(String[]) ZPLDocument[]
     }
 
@@ -91,7 +88,7 @@ classDiagram
         -PresetParser presetParser
         +PresetManager(PresetFieldManager, PresetParser)
         +getPreset(String name) Preset
-        +createPreset(String name) Preset
+        +setPreset(Preset) Preset
         +deletePreset(String name)
         -loadPresets()
     }
@@ -102,16 +99,17 @@ classDiagram
     LabelaryPresetFieldManager *-- FieldDefinition : inner record
 
     DocumentConverter --> ConversionDriver : uses
-    DocumentConverter --> MappedPreset : uses
+    DocumentConverter --> Preset : uses
     DocumentConverter ..> ZPLDocument : creates
 
     PresetManager --> PresetFieldManager : uses
     PresetManager --> PresetParser : uses
     PresetManager --> Preset : manages
 
-    Preset *--> PresetParser : ⚠ holds service
-    Preset ..> MappedPreset : produces
+    PresetParser ..> FieldValidationException : throws
     PresetParser ..> Preset : reads/writes
 
     LabelaryConversionDriver ..> ZPLLabel : splits into
     LabelaryConversionDriver ..> PDFDocument : returns
+
+    FieldValidationException --|> Exception : extends

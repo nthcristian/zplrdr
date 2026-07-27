@@ -21,13 +21,8 @@ public class PresetParser {
         // TODO
     }
 
-    public String[] getFields(String presetName) {
+    public Map<String, String> getMapped(String presetName) {
         // TODO
-        return null;
-    }
-
-    public Map<String, String> getMapped() {
-        // TOOD
         return null;
     }
 }
