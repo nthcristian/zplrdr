@@ -1,4 +1,4 @@
 package io.nthcristian.zplrdr.document;
 
-public record ZPLDocument(String data) {
+public record ZPLDocument(byte[] data) {
 }
