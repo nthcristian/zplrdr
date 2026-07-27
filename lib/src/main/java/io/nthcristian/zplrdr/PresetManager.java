@@ -4,17 +4,17 @@ import java.util.Map;
 
 import io.nthcristian.zplrdr.contract.PresetFieldManager;
 import io.nthcristian.zplrdr.preset.util.Preset;
-import io.nthcristian.zplrdr.preset.util.PresetParser;
+import io.nthcristian.zplrdr.preset.util.PresetFileStore;
 
 public class PresetManager {
     private Map<String, Preset> presets;
 
     private final PresetFieldManager fieldManager;
-    private final PresetParser presetParser;
+    private final PresetFileStore presetFileStore;
 
-    public PresetManager(PresetFieldManager fieldManager, PresetParser presetParser) {
+    public PresetManager(PresetFieldManager fieldManager, PresetFileStore presetFileStore) {
         this.fieldManager = fieldManager;
-        this.presetParser = presetParser;
+        this.presetFileStore = presetFileStore;
     }
 
     public Preset getPreset(String name) {
