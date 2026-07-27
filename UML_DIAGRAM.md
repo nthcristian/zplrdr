@@ -38,15 +38,14 @@ classDiagram
         +String name
         +Map~String, String~ fields
         +getFieldValue(String field) String
-        +setFieldValue(String field, String value) Preset
+        +withFieldValue(String field, String value) Preset
     }
 
-    class PresetParser {
-        -String presetFolderPath
-        +PresetParser(String presetFolderPath)
-        +getFieldValue(String presetName, String field) String
-        +setFieldValue(String presetName, String field, String value)
-        +getMapped(String presetName) Map~String, String~
+    class PresetFileStore {
+        -String storeFolderPath
+        +PresetFileStore(String storeFolderPath)
+        +load(String presetName) Map~String, String~
+        +save(Map~String, String~ fields)
     }
 
     %% Error handling
@@ -85,8 +84,8 @@ classDiagram
     class PresetManager {
         -Map~String, Preset~ presets
         -PresetFieldManager fieldManager
-        -PresetParser presetParser
-        +PresetManager(PresetFieldManager, PresetParser)
+        -PresetFileStore presetFileStore
+        +PresetManager(PresetFieldManager, PresetFileStore)
         +getPreset(String name) Preset
         +setPreset(Preset) Preset
         +deletePreset(String name)
@@ -103,11 +102,10 @@ classDiagram
     DocumentConverter ..> ZPLDocument : creates
 
     PresetManager --> PresetFieldManager : uses
-    PresetManager --> PresetParser : uses
+    PresetManager --> PresetFileStore : uses
     PresetManager --> Preset : manages
 
-    PresetParser ..> FieldValidationException : throws
-    PresetParser ..> Preset : reads/writes
+    PresetFileStore ..> Preset : loads/saves
 
     LabelaryConversionDriver ..> ZPLLabel : splits into
     LabelaryConversionDriver ..> PDFDocument : returns
