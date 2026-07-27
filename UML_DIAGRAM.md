@@ -34,15 +34,17 @@ classDiagram
 
     %% Domain models (preset.util package)
     class Preset {
-        <<record>>
-        +String name
-        +Map~String, String~ fieldValues
+        -String name
+        -PresetParser presetParser
+        +Preset(String name, PresetParser)
+        +getFieldValue(String field) String
+        +setFieldValue(String field, String value)
         +toMappedPreset() MappedPreset
     }
 
     class MappedPreset {
-        -Map~String, String~ map
-        +MappedPreset(Map~String, String~ fields)
+        <<record>>
+        +Map~String, String~ map
         +getFieldValue(String key) String
         +getFields() String[]
     }
@@ -57,7 +59,7 @@ classDiagram
 
     %% Labelary implementation (labelary package)
     class LabelaryConversionDriver {
-        -static final int BATCH_SIZE
+        -final static int BATCH_SIZE
         +requestConversion(ZPLDocument[], MappedPreset) PDFDocument[]
         -splitIntoBatches(ZPLDocument) ZPLLabel[]
         -sendBatch(ZPLLabel[])
@@ -107,6 +109,7 @@ classDiagram
     PresetManager --> PresetParser : uses
     PresetManager --> Preset : manages
 
+    Preset *--> PresetParser : ⚠ holds service
     Preset ..> MappedPreset : produces
     PresetParser ..> Preset : reads/writes
 

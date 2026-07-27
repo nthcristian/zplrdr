@@ -1,5 +1,7 @@
 package io.nthcristian.zplrdr.preset.util;
 
+import java.util.Map;
+
 public class PresetParser {
     private final String presetFolderPath;
 
@@ -14,12 +16,18 @@ public class PresetParser {
         return null;
     }
 
+    // Should handle file creation
     public void setFieldValue(String presetName, String field, String value) {
         // TODO
     }
 
     public String[] getFields(String presetName) {
         // TODO
+        return null;
+    }
+
+    public Map<String, String> getMapped() {
+        // TOOD
         return null;
     }
 }

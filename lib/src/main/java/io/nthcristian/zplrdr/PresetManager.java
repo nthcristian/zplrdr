@@ -22,7 +22,8 @@ public class PresetManager {
         return null;
     }
 
-    public Preset createPreset(String name) {
+    // Create or update
+    public Preset setPreset(Preset preset) {
         // TODO
         return null;
     }

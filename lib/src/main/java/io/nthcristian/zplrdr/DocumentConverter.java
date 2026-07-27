@@ -1,8 +1,8 @@
 package io.nthcristian.zplrdr;
 
-import java.io.File;
+import java.io.InputStream;
 
-import io.nthcristian.zplrdr.preset.util.MappedPreset;
+import io.nthcristian.zplrdr.preset.util.Preset;
 import io.nthcristian.zplrdr.contract.ConversionDriver;
 import io.nthcristian.zplrdr.document.PDFDocument;
 import io.nthcristian.zplrdr.document.ZPLDocument;
@@ -14,7 +14,7 @@ public class DocumentConverter {
         this.conversionDriver = conversionDriver;
     }
 
-    public PDFDocument[] convert(File[] files, MappedPreset mappedPreset) {
+    public PDFDocument[] convert(InputStream[] files, Preset preset) {
         // TODO
         return null;
     }

@@ -1,12 +1,11 @@
 package io.nthcristian.zplrdr.preset.util;
 
-public class Preset {
-    private final String name;
-    private final PresetParser presetParser;
+import java.util.Map;
 
-    public Preset(String name, PresetParser presetParser) {
-        this.name = name;
-        this.presetParser = presetParser;
+public record Preset(String name, Map<String, String> fields) {
+
+    public Preset {
+        fields = Map.copyOf(fields);
     }
 
     public String getFieldValue(String field) {
@@ -14,11 +13,7 @@ public class Preset {
         return null;
     }
 
-    public void setFieldValue(String field, String value) {
-        // TODO
-    }
-
-    public MappedPreset toMappedPreset() {
+    public Preset setFieldValue(String field) {
         // TODO
         return null;
     }

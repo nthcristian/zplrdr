@@ -11,14 +11,14 @@ public class LabelaryPresetFieldManager implements PresetFieldManager {
     }
 
     @Override
-    public Map<String, Boolean> getFields() {
+    public Object getDefaultValueFor(String field) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Object getDefaultValueFor(String field) {
+    public void validateFor(Map<String, String> fields) {
         // TODO Auto-generated method stub
-        return null;
+
     }
 }
