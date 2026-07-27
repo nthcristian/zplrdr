@@ -12,7 +12,7 @@ classDiagram
 
     class PresetFieldManager {
         <<interface>>
-        +validateFor(Map~String, String~ fields)
+        +validateFor(Map~String, String~ fields) throws FieldValidationException
         +getDefaultValueFor(String field) Object
     }
 
@@ -105,6 +105,7 @@ classDiagram
     PresetManager --> PresetFileStore : uses
     PresetManager --> Preset : manages
 
+    PresetFieldManager ..> FieldValidationException : throws
     PresetFileStore ..> Preset : loads/saves
 
     LabelaryConversionDriver ..> ZPLLabel : splits into
