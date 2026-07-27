@@ -3,14 +3,14 @@ package io.nthcristian.zplrdr;
 import java.io.File;
 
 import io.nthcristian.zplrdr.preset.util.MappedPreset;
-import io.nthcristian.zplrdr.contract.IConversionDriver;
-import io.nthcristian.zplrdr.typed.PDFDocument;
-import io.nthcristian.zplrdr.typed.ZPLDocument;
+import io.nthcristian.zplrdr.contract.ConversionDriver;
+import io.nthcristian.zplrdr.document.PDFDocument;
+import io.nthcristian.zplrdr.document.ZPLDocument;
 
 public class DocumentConverter {
-    private final IConversionDriver conversionDriver;
+    private final ConversionDriver conversionDriver;
 
-    public DocumentConverter(IConversionDriver conversionDriver) {
+    public DocumentConverter(ConversionDriver conversionDriver) {
         this.conversionDriver = conversionDriver;
     }
 

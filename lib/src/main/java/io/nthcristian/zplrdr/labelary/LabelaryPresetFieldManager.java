@@ -2,9 +2,9 @@ package io.nthcristian.zplrdr.labelary;
 
 import java.util.Map;
 
-import io.nthcristian.zplrdr.contract.IPresetFieldManager;
+import io.nthcristian.zplrdr.contract.PresetFieldManager;
 
-public class LabelaryPresetFieldManager implements IPresetFieldManager {
+public class LabelaryPresetFieldManager implements PresetFieldManager {
     private final Map<String, FieldDefinition> fields = Map.of();
 
     private record FieldDefinition(Object defaultValue, Boolean optional) {

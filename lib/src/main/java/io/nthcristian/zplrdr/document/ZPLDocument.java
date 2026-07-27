@@ -1,5 +1,4 @@
-package io.nthcristian.zplrdr.typed;
+package io.nthcristian.zplrdr.document;
 
 public record ZPLDocument(String data) {
-
 }
