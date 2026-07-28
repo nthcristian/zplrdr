@@ -40,8 +40,8 @@ class LabelaryPresetSchemaTest {
         @DisplayName("should have default values for all fields")
         void shouldHaveDefaultValues() {
             assertEquals("8dpmm", schema.getDefaultValue("dpmm"));
-            assertEquals(5.9, schema.getDefaultValue("width"));
-            assertEquals(3.9, schema.getDefaultValue("height"));
+            assertEquals(3.9, schema.getDefaultValue("width"));
+            assertEquals(5.9, schema.getDefaultValue("height"));
         }
     }
 
