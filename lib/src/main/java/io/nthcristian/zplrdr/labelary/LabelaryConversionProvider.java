@@ -41,6 +41,10 @@ public class LabelaryConversionProvider implements ConversionProvider {
         String width = preset.getProperty("width");
         String height = preset.getProperty("height");
 
+        if (dpmm == null || width == null || height == null) {
+            throw new ConversionProviderException("One of the required options are missing.");
+        }
+
         String url = config.baseUrl()
                 .replace("{dpmm}", dpmm)
                 .replace("{width}", width)
