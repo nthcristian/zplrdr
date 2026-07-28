@@ -23,8 +23,12 @@ import io.nthcristian.zplrdr.labelary.util.LabelaryConfig;
 
 public class LabelaryConversionDriver implements ConversionDriver {
     private static final int BATCH_SIZE = 50;
-    private static final LabelaryConfig config = new LabelaryConfig(
-            "http://api.labelary.com/v1/printers/{dpmm}/labels/{width}x{height}/", null);
+    private LabelaryConfig config = new LabelaryConfig(
+            "http://api.labelary.com/v1/printers/{dpmm}/labels/{width}x{height}/", null);;
+
+    public LabelaryConversionDriver(LabelaryConfig config) {
+        this.config = config;
+    }
 
     @Override
     public PDFDocument[] requestConversion(ZPLDocument[] zplFiles, Preset preset) throws ConversionException {
