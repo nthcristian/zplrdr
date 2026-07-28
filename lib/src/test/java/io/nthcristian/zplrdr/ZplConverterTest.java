@@ -7,7 +7,8 @@ import io.nthcristian.zplrdr.document.PdfDocument;
 import io.nthcristian.zplrdr.document.ZplDocument;
 import io.nthcristian.zplrdr.error.ConversionProviderException;
 import io.nthcristian.zplrdr.error.ZplConverterException;
-import io.nthcristian.zplrdr.preset.util.Preset;
+import io.nthcristian.zplrdr.preset.Preset;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

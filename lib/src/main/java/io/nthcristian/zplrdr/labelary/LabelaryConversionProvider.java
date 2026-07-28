@@ -15,12 +15,12 @@ import java.util.Vector;
 
 import io.nthcristian.zplrdr.contract.ConversionProvider;
 import io.nthcristian.zplrdr.error.ConversionProviderException;
-import io.nthcristian.zplrdr.preset.util.Preset;
 import jakarta.validation.constraints.NotNull;
 import io.nthcristian.zplrdr.document.PdfDocument;
 import io.nthcristian.zplrdr.document.ZplDocument;
 import io.nthcristian.zplrdr.labelary.document.ZplLabel;
 import io.nthcristian.zplrdr.labelary.util.LabelaryClientConfig;
+import io.nthcristian.zplrdr.preset.Preset;
 
 public class LabelaryConversionProvider implements ConversionProvider {
     private static final int BATCH_SIZE = 50;

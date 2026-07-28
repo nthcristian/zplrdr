@@ -1,8 +1,9 @@
-package io.nthcristian.zplrdr.preset.util;
+package io.nthcristian.zplrdr.preset;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import io.nthcristian.zplrdr.error.PresetStorageException;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

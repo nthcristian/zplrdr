@@ -1,4 +1,4 @@
-package io.nthcristian.zplrdr.preset.util;
+package io.nthcristian.zplrdr.preset;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

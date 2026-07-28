@@ -1,4 +1,4 @@
-package io.nthcristian.zplrdr.preset.util;
+package io.nthcristian.zplrdr.preset;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

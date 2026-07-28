@@ -10,7 +10,8 @@ import io.nthcristian.zplrdr.document.PdfDocument;
 import io.nthcristian.zplrdr.document.ZplDocument;
 import io.nthcristian.zplrdr.error.ConversionProviderException;
 import io.nthcristian.zplrdr.labelary.util.LabelaryClientConfig;
-import io.nthcristian.zplrdr.preset.util.Preset;
+import io.nthcristian.zplrdr.preset.Preset;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;

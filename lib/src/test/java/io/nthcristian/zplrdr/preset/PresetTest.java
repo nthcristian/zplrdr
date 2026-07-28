@@ -1,8 +1,7 @@
-package io.nthcristian.zplrdr;
+package io.nthcristian.zplrdr.preset;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import io.nthcristian.zplrdr.preset.util.Preset;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

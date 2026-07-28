@@ -5,8 +5,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import io.nthcristian.zplrdr.contract.PresetSchema;
 import io.nthcristian.zplrdr.error.PresetSchemaException;
 import io.nthcristian.zplrdr.error.PresetServiceException;
-import io.nthcristian.zplrdr.preset.util.Preset;
-import io.nthcristian.zplrdr.preset.util.PresetRepository;
+import io.nthcristian.zplrdr.preset.Preset;
+import io.nthcristian.zplrdr.preset.PresetRepository;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

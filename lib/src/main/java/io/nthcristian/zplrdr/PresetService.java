@@ -7,8 +7,8 @@ import io.nthcristian.zplrdr.contract.PresetSchema;
 import io.nthcristian.zplrdr.error.PresetSchemaException;
 import io.nthcristian.zplrdr.error.PresetStorageException;
 import io.nthcristian.zplrdr.error.PresetServiceException;
-import io.nthcristian.zplrdr.preset.util.Preset;
-import io.nthcristian.zplrdr.preset.util.PresetRepository;
+import io.nthcristian.zplrdr.preset.Preset;
+import io.nthcristian.zplrdr.preset.PresetRepository;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 

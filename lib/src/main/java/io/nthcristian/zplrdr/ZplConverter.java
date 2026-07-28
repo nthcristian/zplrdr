@@ -5,12 +5,12 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 import jakarta.validation.constraints.NotNull;
-import io.nthcristian.zplrdr.preset.util.Preset;
 import io.nthcristian.zplrdr.contract.ConversionProvider;
 import io.nthcristian.zplrdr.document.PdfDocument;
 import io.nthcristian.zplrdr.document.ZplDocument;
 import io.nthcristian.zplrdr.error.ConversionProviderException;
 import io.nthcristian.zplrdr.error.ZplConverterException;
+import io.nthcristian.zplrdr.preset.Preset;
 
 public class ZplConverter {
     private static final String ZPL_START = "^XA";
