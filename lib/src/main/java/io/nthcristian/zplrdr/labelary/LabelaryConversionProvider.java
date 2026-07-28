@@ -16,6 +16,7 @@ import java.util.Vector;
 import io.nthcristian.zplrdr.contract.ConversionProvider;
 import io.nthcristian.zplrdr.error.ConversionProviderException;
 import io.nthcristian.zplrdr.preset.util.Preset;
+import jakarta.validation.constraints.NotNull;
 import io.nthcristian.zplrdr.document.PdfDocument;
 import io.nthcristian.zplrdr.document.ZplDocument;
 import io.nthcristian.zplrdr.labelary.document.ZplLabel;
@@ -23,10 +24,14 @@ import io.nthcristian.zplrdr.labelary.util.LabelaryClientConfig;
 
 public class LabelaryConversionProvider implements ConversionProvider {
     private static final int BATCH_SIZE = 50;
-    private LabelaryClientConfig config = new LabelaryClientConfig(
-            "http://api.labelary.com/v1/printers/{dpmm}/labels/{width}x{height}/", null);;
+    private final LabelaryClientConfig config;
 
-    public LabelaryConversionProvider(LabelaryClientConfig config) {
+    public LabelaryConversionProvider() {
+        this.config = new LabelaryClientConfig(
+                "http://api.labelary.com/v1/printers/{dpmm}/labels/{width}x{height}/", null);
+    }
+
+    public LabelaryConversionProvider(@NotNull LabelaryClientConfig config) {
         this.config = config;
     }
 
