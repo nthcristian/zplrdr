@@ -14,11 +14,11 @@ public record Preset(
         fields = Map.copyOf(fields);
     }
 
-    public String getFieldValue(@NotNull String field) {
+    public String getProperty(@NotNull String field) {
         return fields().get(field);
     }
 
-    public Preset withFieldValue(@NotBlank String field, @NotNull String value) {
+    public Preset withProperty(@NotBlank String field, @NotNull String value) {
         Map<String, String> modified = new HashMap<>(fields());
         modified.put(field, value);
         return new Preset(name(), modified);

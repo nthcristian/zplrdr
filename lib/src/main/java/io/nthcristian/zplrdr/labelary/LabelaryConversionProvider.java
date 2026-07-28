@@ -13,46 +13,46 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Vector;
 
-import io.nthcristian.zplrdr.contract.ConversionDriver;
-import io.nthcristian.zplrdr.error.ConversionException;
+import io.nthcristian.zplrdr.contract.ConversionProvider;
+import io.nthcristian.zplrdr.error.ConversionProviderException;
 import io.nthcristian.zplrdr.preset.util.Preset;
-import io.nthcristian.zplrdr.document.PDFDocument;
-import io.nthcristian.zplrdr.document.ZPLDocument;
-import io.nthcristian.zplrdr.labelary.document.ZPLLabel;
-import io.nthcristian.zplrdr.labelary.util.LabelaryConfig;
+import io.nthcristian.zplrdr.document.PdfDocument;
+import io.nthcristian.zplrdr.document.ZplDocument;
+import io.nthcristian.zplrdr.labelary.document.ZplLabel;
+import io.nthcristian.zplrdr.labelary.util.LabelaryClientConfig;
 
-public class LabelaryConversionDriver implements ConversionDriver {
+public class LabelaryConversionProvider implements ConversionProvider {
     private static final int BATCH_SIZE = 50;
-    private LabelaryConfig config = new LabelaryConfig(
+    private LabelaryClientConfig config = new LabelaryClientConfig(
             "http://api.labelary.com/v1/printers/{dpmm}/labels/{width}x{height}/", null);;
 
-    public LabelaryConversionDriver(LabelaryConfig config) {
+    public LabelaryConversionProvider(LabelaryClientConfig config) {
         this.config = config;
     }
 
     @Override
-    public PDFDocument[] requestConversion(ZPLDocument[] zplFiles, Preset preset) throws ConversionException {
-        String dpmm = preset.getFieldValue("dpmm");
-        String width = preset.getFieldValue("width");
-        String height = preset.getFieldValue("height");
+    public PdfDocument[] convert(ZplDocument[] zplFiles, Preset preset) throws ConversionProviderException {
+        String dpmm = preset.getProperty("dpmm");
+        String width = preset.getProperty("width");
+        String height = preset.getProperty("height");
 
         String url = config.baseUrl()
                 .replace("{dpmm}", dpmm)
                 .replace("{width}", width)
                 .replace("{height}", height);
 
-        List<PDFDocument> results = new ArrayList<>();
-        for (ZPLDocument zplFile : zplFiles) {
-            ZPLLabel[][] batches = splitIntoBatches(zplFile);
-            for (ZPLLabel[] batch : batches) {
+        List<PdfDocument> results = new ArrayList<>();
+        for (ZplDocument zplFile : zplFiles) {
+            ZplLabel[][] batches = splitIntoBatches(zplFile);
+            for (ZplLabel[] batch : batches) {
                 results.add(sendBatch(url, batch));
             }
         }
 
-        return results.toArray(new PDFDocument[0]);
+        return results.toArray(new PdfDocument[0]);
     }
 
-    private ZPLLabel[][] splitIntoBatches(ZPLDocument zplFile) {
+    private ZplLabel[][] splitIntoBatches(ZplDocument zplFile) {
         var encoded = new String(zplFile.data(), StandardCharsets.UTF_8);
 
         Queue<String> splitted = new LinkedList<>();
@@ -64,10 +64,10 @@ public class LabelaryConversionDriver implements ConversionDriver {
             splitted.add(split.concat("^XZ"));
         }
 
-        var batches = new Vector<List<ZPLLabel>>();
+        var batches = new Vector<List<ZplLabel>>();
 
         var currentBatchSize = 0;
-        var batch = new Vector<ZPLLabel>();
+        var batch = new Vector<ZplLabel>();
         do {
             var polled = splitted.poll();
             if (polled == null) {
@@ -79,24 +79,24 @@ public class LabelaryConversionDriver implements ConversionDriver {
 
             if (currentBatchSize == BATCH_SIZE) {
                 batches.add(batch);
-                batch = new Vector<ZPLLabel>();
+                batch = new Vector<ZplLabel>();
                 currentBatchSize = 0;
             }
 
-            batch.add(new ZPLLabel(polled.getBytes(StandardCharsets.UTF_8)));
+            batch.add(new ZplLabel(polled.getBytes(StandardCharsets.UTF_8)));
             currentBatchSize++;
         } while (true);
 
-        ZPLLabel[][] result = new ZPLLabel[batches.size()][];
+        ZplLabel[][] result = new ZplLabel[batches.size()][];
         for (int i = 0; i < batches.size(); i++) {
-            List<ZPLLabel> batchList = batches.get(i);
-            result[i] = batchList.toArray(new ZPLLabel[0]);
+            List<ZplLabel> batchList = batches.get(i);
+            result[i] = batchList.toArray(new ZplLabel[0]);
         }
 
         return result;
     }
 
-    private PDFDocument sendBatch(String url, ZPLLabel[] zplBatch) throws ConversionException {
+    private PdfDocument sendBatch(String url, ZplLabel[] zplBatch) throws ConversionProviderException {
         try {
             var apiUrl = URI.create(url).toURL();
             var connection = (HttpURLConnection) apiUrl.openConnection();
@@ -106,7 +106,7 @@ public class LabelaryConversionDriver implements ConversionDriver {
             connection.setDoOutput(true);
 
             ByteArrayOutputStream bodyStream = new ByteArrayOutputStream();
-            for (ZPLLabel label : zplBatch) {
+            for (ZplLabel label : zplBatch) {
                 bodyStream.write(label.data());
             }
 
@@ -117,7 +117,7 @@ public class LabelaryConversionDriver implements ConversionDriver {
 
             int responseCode = connection.getResponseCode();
             if (responseCode != HttpURLConnection.HTTP_OK) {
-                throw new ConversionException("Labelary API returned HTTP " + responseCode);
+                throw new ConversionProviderException("Labelary API returned HTTP " + responseCode);
             }
 
             byte[] pdfData;
@@ -125,9 +125,9 @@ public class LabelaryConversionDriver implements ConversionDriver {
                 pdfData = is.readAllBytes();
             }
 
-            return new PDFDocument(pdfData);
+            return new PdfDocument(pdfData);
         } catch (IOException e) {
-            throw new ConversionException("Failed to send batch to Labelary", e);
+            throw new ConversionProviderException("Failed to send batch to Labelary", e);
         }
     }
 }

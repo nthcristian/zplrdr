@@ -6,11 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class LibraryTest {
     @Test
     void documentConverterCanBeInstantiated() {
-        assertNotNull(DocumentConverter.class);
+        assertNotNull(ZplConverter.class);
     }
 
     @Test
     void presetManagerCanBeInstantiated() {
-        assertNotNull(PresetManager.class);
+        assertNotNull(PresetService.class);
     }
 }

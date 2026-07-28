@@ -4,61 +4,62 @@
 classDiagram
     direction TB
 
-    %% Interfaces (contract package)
-    class ConversionDriver {
+    %% Interfaces (SPI / Strategy Patterns)
+    class ConversionProvider {
         <<interface>>
-        +requestConversion(ZPLDocument[], Preset) PDFDocument[]*
+        +convert(ZplDocument[], Preset) PdfDocument[]*
     }
 
-    class PresetFieldManager {
+    class PresetSchema {
         <<interface>>
-        +validateFor(Map~String, String~ fields)*
-        +getDefaultValueFor(String field) Object
+        +validate(Map~String, String~ fields)*
+        +getDefaultValue(String field) Object
         +getFieldNames() Set~String~
     }
 
-    %% Value Objects / Records (document package)
-    class PDFDocument {
+    %% Value Objects / Records (Domain Payload)
+    class PdfDocument {
         <<record>>
-        +byte[] data
+        +byte[] content
     }
 
-    class ZPLDocument {
+    class ZplDocument {
         <<record>>
-        +byte[] data
+        +byte[] content
     }
 
-    %% document (labelary sub-package)
-    class ZPLLabel {
+    %% Labelary Sub-package payload
+    class ZplLabel {
         <<record>>
-        +byte[] data
+        +byte[] content
     }
 
-    %% Domain models (preset.util package)
+    %% Domain models
     class Preset {
         <<record>>
         +String name
         +Map~String, String~ fields
-        +getFieldValue(String field) String
-        +withFieldValue(String field, String value) Preset
+        +getProperty(String field) String
+        +withProperty(String field, String value) Preset
     }
 
-    class PresetFileStore {
-        -Path storeFolder
+    %% Repository Pattern
+    class PresetRepository {
+        -Path storagePath
         -Map~String, Map~String, String~~ cache
-        +PresetFileStore(String storeFolderPath)
-        +load(String presetName) Map~String, String~
-        +loadAll() Map~String, Map~String, String~~
+        +PresetRepository(String storageDirectory)
+        +findById(String presetName) Map~String, String~
+        +findAll() Map~String, Map~String, String~~
         +save(String presetName, Map~String, String~ fields)
-        +delete(String presetName)
-        -resolveFile(String presetName) Path
-        -ensureDirectory()
+        +deleteById(String presetName)
+        -resolveFilePath(String presetName) Path
+        -ensureStorageDirectory()
     }
 
-    %% Abstract base
-    class AbstractPresetFieldManager {
+    %% Abstract Base (Template Method Pattern)
+    class AbstractPresetSchema {
         -Map~String, FieldDefinition~ requiredFields
-        +getDefaultValueFor(String field) Object
+        +getDefaultValue(String field) Object
         +getFieldNames() Set~String~
         #getRequiredFieldDefinitions() Map~String, FieldDefinition~
     }
@@ -66,115 +67,112 @@ classDiagram
     class FieldDefinition {
         <<record>>
         +Object defaultValue
-        +definition(Object defaultValue)$ FieldDefinition
+        +of(Object defaultValue)$ FieldDefinition
     }
 
     %% Configuration
-    class LabelaryConfig {
+    class LabelaryClientConfig {
         <<record>>
         +String baseUrl
         +String apiKey
     }
 
-    %% Error handling
-    class FieldValidationException {
-        +FieldValidationException(String message)
-        +FieldValidationException(String message, Throwable cause)
+    %% Error Handling (Granular Exceptions)
+    class PresetValidationException {
+        +PresetValidationException(String message)
+        +PresetValidationException(String message, Throwable cause)
     }
 
-    class ConversionException {
-        +ConversionException(String message)
-        +ConversionException(String message, Throwable cause)
+    class ProviderConversionException {
+        +ProviderConversionException(String message)
+        +ProviderConversionException(String message, Throwable cause)
     }
 
-    class PresetManagerException {
-        +PresetManagerException(String message)
-        +PresetManagerException(String message, Throwable cause)
+    class PresetServiceException {
+        +PresetServiceException(String message)
+        +PresetServiceException(String message, Throwable cause)
     }
 
-    class DocumentConverterException {
-        +DocumentConverterException(String message)
-        +DocumentConverterException(String message, Throwable cause)
+    class ZplConversionException {
+        +ZplConversionException(String message)
+        +ZplConversionException(String message, Throwable cause)
     }
 
-    class PresetFileStoreException {
-        +PresetFileStoreException(String message)
-        +PresetFileStoreException(String message, Throwable cause)
+    class PresetStorageException {
+        +PresetStorageException(String message)
+        +PresetStorageException(String message, Throwable cause)
     }
 
-    %% Labelary implementation (labelary package)
-    class LabelaryConversionDriver {
+    %% Implementations
+    class LabelaryConversionProvider {
         -static final int BATCH_SIZE
-        -LabelaryConfig config
-        +LabelaryConversionDriver(LabelaryConfig config)
-        +requestConversion(ZPLDocument[], Preset) PDFDocument[]*
-        -splitIntoBatches(ZPLDocument) ZPLLabel[][]
-        -sendBatch(String url, ZPLLabel[]) PDFDocument
+        -LabelaryClientConfig config
+        +LabelaryConversionProvider(LabelaryClientConfig config)
+        +convert(ZplDocument[], Preset) PdfDocument[]*
+        -partitionIntoBatches(ZplDocument) ZplLabel[][]
+        -executeBatchRequest(String url, ZplLabel[]) PdfDocument
     }
 
-    class LabelaryPresetFieldManager {
+    class LabelaryPresetSchema {
         -Pattern DPMM_PATTERN$
         -Pattern NUMERIC_PATTERN$
-        +validateFor(Map~String, String~ fields)*
+        +validate(Map~String, String~ fields)*
     }
 
-    %% Top-level orchestration
-    class DocumentConverter {
-        -ConversionDriver conversionDriver
-        -static final String ZPL_START$
-        -static final String ZPL_END$
-        +DocumentConverter(ConversionDriver)
-        +convert(InputStream[], Preset) PDFDocument[]*
-        -parseAndValidate(InputStream) ZPLDocument
-        -validateZplContent(byte[] data)
+    %% Orchestration (Service / Facade Patterns)
+    class ZplConverter {
+        -ConversionProvider provider
+        -static final String ZPL_START_TAG$
+        -static final String ZPL_END_TAG$
+        +ZplConverter(ConversionProvider provider)
+        +convertAll(InputStream[], Preset) PdfDocument[]*
+        -parseAndValidate(InputStream) ZplDocument
+        -validateFormat(byte[] content)
     }
 
-    class PresetManager {
-        -Map~String, Preset~ presets
-        -PresetFieldManager fieldManager
-        -PresetFileStore presetFileStore
-        +PresetManager(PresetFieldManager, PresetFileStore)
+    class PresetService {
+        -Map~String, Preset~ activePresets
+        -PresetSchema schema
+        -PresetRepository repository
+        +PresetService(PresetSchema schema, PresetRepository repository)
         +getPreset(String name) Preset
         +createPreset(String name) Preset
-        +persistPreset(Preset) Preset
+        +savePreset(Preset preset) Preset
         +deletePreset(String name)
-        -loadPresets()
+        -initializeCache()
     }
 
-    %% Relationships — implementations
-    ConversionDriver <|.. LabelaryConversionDriver : implements
-    PresetFieldManager <|.. AbstractPresetFieldManager : implements
-    AbstractPresetFieldManager <|-- LabelaryPresetFieldManager : extends
-    AbstractPresetFieldManager *-- FieldDefinition : inner record
+    %% Relationships — Implementations
+    ConversionProvider <|.. LabelaryConversionProvider : implements
+    PresetSchema <|.. AbstractPresetSchema : implements
+    AbstractPresetSchema <|-- LabelaryPresetSchema : extends
+    AbstractPresetSchema *-- FieldDefinition : inner record
 
-    %% Relationships — dependencies / usages
-    DocumentConverter --> ConversionDriver : uses
-    DocumentConverter --> Preset : uses
-    DocumentConverter ..> ZPLDocument : creates
-    DocumentConverter ..> DocumentConverterException : throws
+    %% Relationships — Dependencies
+    ZplConverter --> ConversionProvider : delegates to
+    ZplConverter --> Preset : uses
+    ZplConverter ..> ZplDocument : creates
+    ZplConverter ..> ZplConversionException : throws
 
-    PresetManager --> PresetFieldManager : uses
-    PresetManager --> PresetFileStore : uses
-    PresetManager --> Preset : manages
-    PresetManager ..> PresetManagerException : throws
-    PresetManager ..> FieldValidationException : throws
+    PresetService --> PresetSchema : uses
+    PresetService --> PresetRepository : uses
+    PresetService --> Preset : manages
+    PresetService ..> PresetServiceException : throws
+    PresetService ..> PresetValidationException : throws
 
-    PresetFileStore ..> PresetFileStoreException : throws
-    PresetFileStore ..> Preset : loads/saves (fields)
+    PresetRepository ..> PresetStorageException : throws
+    PresetRepository ..> Preset : loads/saves (fields)
 
-    LabelaryConversionDriver --> LabelaryConfig : uses
-    LabelaryConversionDriver ..> ZPLLabel : splits into
-    LabelaryConversionDriver ..> PDFDocument : returns
-    LabelaryConversionDriver ..> ConversionException : throws
+    LabelaryConversionProvider --> LabelaryClientConfig : configured by
+    LabelaryConversionProvider ..> ZplLabel : partitions into
+    LabelaryConversionProvider ..> PdfDocument : produces
+    LabelaryConversionProvider ..> ProviderConversionException : throws
 
-    LabelaryPresetFieldManager ..> FieldValidationException : throws
+    LabelaryPresetSchema ..> PresetValidationException : throws
 
-    %% Inheritance — exceptions
-    FieldValidationException --|> Exception : extends
-    ConversionException --|> Exception : extends
-    PresetManagerException --|> Exception : extends
-    DocumentConverterException --|> Exception : extends
-    PresetFileStoreException --|> Exception : extends
-
-    %% Legend
-    note for PresetFieldManager "methods marked * throw checked exceptions"
+    %% Inheritance — Exceptions
+    PresetValidationException --|> Exception : extends
+    ProviderConversionException --|> Exception : extends
+    PresetServiceException --|> Exception : extends
+    ZplConversionException --|> Exception : extends
+    PresetStorageException --|> Exception : extends
