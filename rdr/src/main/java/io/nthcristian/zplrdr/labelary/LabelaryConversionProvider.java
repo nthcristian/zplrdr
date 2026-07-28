@@ -36,7 +36,8 @@ public class LabelaryConversionProvider implements ConversionProvider {
     }
 
     @Override
-    public PdfDocument[] convert(ZplDocument[] zplFiles, Preset preset) throws ConversionProviderException {
+    public PdfDocument[] convert(@NotNull ZplDocument[] zplFiles, @NotNull Preset preset)
+            throws ConversionProviderException {
         String dpmm = preset.getProperty("dpmm");
         String width = preset.getProperty("width");
         String height = preset.getProperty("height");

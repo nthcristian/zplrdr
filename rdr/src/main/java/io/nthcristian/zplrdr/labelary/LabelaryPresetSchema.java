@@ -11,8 +11,8 @@ public class LabelaryPresetSchema extends AbstractPresetSchema {
     public LabelaryPresetSchema() {
         Map<String, FieldDefinition> requiredFields = Map.ofEntries(
                 Map.entry("dpmm", FieldDefinition.of("8dpmm")),
-                Map.entry("width", FieldDefinition.of(5.9)),
-                Map.entry("height", FieldDefinition.of(3.9)));
+                Map.entry("width", FieldDefinition.of(3.9)),
+                Map.entry("height", FieldDefinition.of(5.9)));
 
         super(requiredFields);
     }
