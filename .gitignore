@@ -13,3 +13,5 @@ bin
 .cursor
 
 test-objects
+
+.devcontainer
