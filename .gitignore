@@ -9,3 +9,9 @@ build
 
 # What is even this?
 bin
+
+.cursor
+
+test-objects
+
+.devcontainer

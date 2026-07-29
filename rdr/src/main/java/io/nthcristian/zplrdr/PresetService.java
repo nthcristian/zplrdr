@@ -1,6 +1,7 @@
 package io.nthcristian.zplrdr;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.nthcristian.zplrdr.contract.PresetSchema;
@@ -30,6 +31,10 @@ public class PresetService {
 
     public Preset getPreset(@NotBlank String name) {
         return activePresets.get(name);
+    }
+
+    public List<Preset> listPresets() {
+        return List.copyOf(activePresets.values());
     }
 
     public Preset createPreset(@NotBlank String name) throws PresetServiceException {

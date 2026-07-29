@@ -13,3 +13,5 @@ plugins {
 rootProject.name = "zplrdr"
 include("rdr")
 include("cli")
+include("prt")
+include("gui")

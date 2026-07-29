@@ -9,14 +9,13 @@ repositories {
 dependencies {
     implementation(project(":rdr"))
     implementation(project(":prt"))
-    implementation(libs.picocli)
 
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 application {
-    mainClass.set("io.nthcristian.zplrdr.cli.Main")
+    mainClass.set("io.nthcristian.zplrdr.gui.Main")
     applicationName = "zplrdr"
 }
 

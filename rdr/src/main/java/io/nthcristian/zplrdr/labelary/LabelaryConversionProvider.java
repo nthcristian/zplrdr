@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -135,9 +136,16 @@ public class LabelaryConversionProvider implements ConversionProvider {
                 pdfData = is.readAllBytes();
             }
 
+            // Max of 3 requests per second
+            // 1/3 (sec/req) is 33 milisecond per request so it doesn't never reaches
+            // more than 3 requestes in one second. 34 miliseconds is to make sure it won't
+            // exceed the api limits
+            Thread.sleep(Duration.ofMillis(34));
             return new PdfDocument(pdfData);
         } catch (IOException e) {
             throw new ConversionProviderException("Failed to send batch to Labelary", e);
+        } catch (InterruptedException e) {
+            throw new ConversionProviderException("");
         }
     }
 }
