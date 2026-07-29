@@ -85,9 +85,5 @@ Cada arquivo contém um mapa chave-valor com os campos:
 | Campo | Descrição | Exemplo |
 |---|---|---|
 | `dpmm` | Pontos por milímetro | `"8"` |
-| `width` | Largura da etiqueta em pontos | `"812"` |
-| `height` | Altura da etiqueta em pontos | `"1218"` |
-
-## Licença
-
-Este projeto é privado.
+| `width` | Largura da etiqueta em polegadas | `"1"` |
+| `height` | Altura da etiqueta em polegadas | `"3"` |
