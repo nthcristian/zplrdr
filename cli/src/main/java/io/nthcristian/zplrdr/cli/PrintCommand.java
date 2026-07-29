@@ -11,9 +11,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
-@Command(
-        name = "print",
-        description = "Convert ZPL label files to PDF and print them.")
+@Command(name = "print", description = "Convert ZPL label files to PDF and print them.")
 class PrintCommand implements Callable<Integer> {
 
     @Option(names = { "-p", "--preset" }, required = true, description = "Preset name to use for conversion.")

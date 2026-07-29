@@ -6,18 +6,13 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.IExecutionExceptionHandler;
 import picocli.CommandLine.ParseResult;
 
-@Command(
-        name = "zplrdr",
-        mixinStandardHelpOptions = true,
-        version = "zplrdr 1.0",
-        description = "Convert ZPL labels to PDF and print them on thermal label printers.",
-        subcommands = {
-                ConvertCommand.class,
-                PrintCommand.class,
-                PrintPdfCommand.class,
-                PresetCommands.class,
-                PrintersCommand.class
-        })
+@Command(name = "zplrdr", mixinStandardHelpOptions = true, version = "zplrdr 1.0", description = "Convert ZPL labels to PDF and print them on thermal label printers.", subcommands = {
+        ConvertCommand.class,
+        PrintCommand.class,
+        PrintPdfCommand.class,
+        PresetCommands.class,
+        PrintersCommand.class
+})
 public class Main implements Runnable {
 
     public static void main(String[] args) {

@@ -53,7 +53,7 @@ public class ZplConverter {
     }
 
     private void validateFormat(byte[] data) throws ZplConverterException {
-        String content = new String(data, StandardCharsets.UTF_8);
+        String content = new String(data, StandardCharsets.UTF_8).trim();
         if (!content.startsWith(ZPL_START) || !content.endsWith(ZPL_END)) {
             throw new ZplConverterException("The file is not a valid ZPL document");
         }
