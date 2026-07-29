@@ -20,8 +20,12 @@ import io.nthcristian.zplrdr.document.PdfDocument;
 public class PrinterService {
 
     static {
-        // Allow print APIs without a graphical display (servers/containers).
-        System.setProperty("java.awt.headless", "true");
+        // Allow print APIs without a graphical display (servers/containers),
+        // but only when no explicit value has been set. The GUI module
+        // pre-sets "false" so AWT initializes in windowed mode.
+        if (System.getProperty("java.awt.headless") == null) {
+            System.setProperty("java.awt.headless", "true");
+        }
     }
 
     public void print(@NotNull PdfDocument document) throws PrinterServiceException {
