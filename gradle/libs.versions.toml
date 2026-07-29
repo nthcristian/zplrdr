@@ -9,6 +9,8 @@ jakarta-validation = "3.1.0"
 hibernate-validator = "8.0.2.Final"
 jakarta-el = "4.0.2"
 jackson = "2.18.3"
+pdfbox = "3.0.4"
+picocli = "4.7.6"
 
 [libraries]
 commons-math3 = { module = "org.apache.commons:commons-math3", version.ref = "commons-math3" }
@@ -18,3 +20,5 @@ jakarta-validation-api = { module = "jakarta.validation:jakarta.validation-api",
 hibernate-validator = { module = "org.hibernate.validator:hibernate-validator", version.ref = "hibernate-validator" }
 jakarta-el = { module = "org.glassfish:jakarta.el", version.ref = "jakarta-el" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+pdfbox = { module = "org.apache.pdfbox:pdfbox", version.ref = "pdfbox" }
+picocli = { module = "info.picocli:picocli", version.ref = "picocli" }

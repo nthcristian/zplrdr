@@ -7,17 +7,25 @@ repositories {
 }
 
 dependencies {
-    // Tells the CLI to use the code from your 'lib' module
     implementation(project(":rdr"))
+    implementation(project(":prt"))
+    implementation(libs.picocli)
+
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 application {
-    // Point this to your new Main class
     mainClass.set("io.nthcristian.zplrdr.cli.Main")
+    applicationName = "zplrdr"
 }
 
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)
     }
+}
+
+tasks.named<Test>("test") {
+    useJUnitPlatform()
 }

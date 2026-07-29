@@ -131,6 +131,30 @@ class PresetServiceTest {
     }
 
     @Nested
+    @DisplayName("listPresets")
+    class ListPresets {
+
+        @Test
+        @DisplayName("should return empty list when no presets are saved")
+        void shouldReturnEmptyListWhenNoneSaved() {
+            assertTrue(service.listPresets().isEmpty());
+        }
+
+        @Test
+        @DisplayName("should return all saved presets")
+        void shouldReturnAllSavedPresets() throws Exception {
+            service.savePreset(service.createPreset("label1"));
+            service.savePreset(service.createPreset("label2"));
+
+            var names = service.listPresets().stream().map(Preset::name).toList();
+
+            assertEquals(2, names.size());
+            assertTrue(names.contains("label1"));
+            assertTrue(names.contains("label2"));
+        }
+    }
+
+    @Nested
     @DisplayName("savePreset")
     class SavePreset {
 
