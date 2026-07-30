@@ -2,22 +2,24 @@ package io.nthcristian.zplrdr.cli;
 
 import java.util.concurrent.Callable;
 
+import io.nthcristian.prt.PrinterService;
 import picocli.CommandLine.Command;
 
 @Command(
         name = "printers",
-        description = "List installed printers available to the print service.")
+        description = "List locally-attached printer devices.")
 class PrintersCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        String[] printers = CliSupport.printerService().listPrinters();
-        if (printers.length == 0) {
-            System.out.println("No printers found.");
+        String[] devices = PrinterService.listDevices();
+        if (devices.length == 0) {
+            System.out.println("No local printer devices found.");
+            System.out.println("Try a TCP address: tcp://<ip>:9100");
             return 0;
         }
-        for (String printer : printers) {
-            System.out.println(printer);
+        for (String device : devices) {
+            System.out.println(device);
         }
         return 0;
     }

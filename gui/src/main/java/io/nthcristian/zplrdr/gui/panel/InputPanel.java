@@ -67,6 +67,10 @@ public class InputPanel extends JPanel {
         addButton.addActionListener(e -> addFiles());
         fileButtons.add(addButton);
 
+        var loadPdfButton = new JButton("Carregar PDFs...");
+        loadPdfButton.addActionListener(e -> loadPdfs());
+        fileButtons.add(loadPdfButton);
+
         var removeButton = new JButton("Remover");
         removeButton.addActionListener(e -> removeSelected());
         fileButtons.add(removeButton);
@@ -102,6 +106,26 @@ public class InputPanel extends JPanel {
         topPanel.add(actionPanel);
 
         add(topPanel, BorderLayout.CENTER);
+    }
+
+    /**
+     * Abre um JFileChooser para carregar arquivos PDF existentes
+     * e os encaminha ao painel principal para impressão direta.
+     */
+    public void loadPdfs() {
+        var chooser = new JFileChooser();
+        chooser.setMultiSelectionEnabled(true);
+        chooser.setDialogTitle("Selecionar arquivos PDF");
+
+        int result = chooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            var files = chooser.getSelectedFiles();
+            var paths = new java.util.ArrayList<Path>(files.length);
+            for (var file : files) {
+                paths.add(file.toPath().toAbsolutePath().normalize());
+            }
+            parent.onPdfsLoaded(paths);
+        }
     }
 
     /**

@@ -2,78 +2,86 @@ package io.nthcristian.prt;
 
 import java.io.IOException;
 
-import javax.print.DocFlavor;
-import javax.print.DocPrintJob;
-import javax.print.PrintException;
-import javax.print.PrintService;
-import javax.print.PrintServiceLookup;
-import javax.print.SimpleDoc;
-import javax.print.attribute.PrintRequestAttributeSet;
-
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 
 import jakarta.validation.constraints.NotNull;
+import io.nthcristian.prt.PdfBitmapRenderer.BitmapImage;
 import io.nthcristian.prt.error.PrinterServiceException;
 import io.nthcristian.zplrdr.document.PdfDocument;
 
+/**
+ * Prints PDF label documents on TSPL-compatible thermal printers by
+ * converting each page to a monochrome bitmap and sending raw TSPL
+ * commands directly to the printer device.
+ *
+ * <p>Bypasses the operating-system print driver entirely — no
+ * {@code javax.print}, no CUPS, no spooler. Just raw bytes over TCP
+ * (port 9100) or a device file ({@code /dev/usb/lp0}).</p>
+ */
 public class PrinterService {
 
-    static {
-        // Allow print APIs without a graphical display (servers/containers),
-        // but only when no explicit value has been set. The GUI module
-        // pre-sets "false" so AWT initializes in windowed mode.
-        if (System.getProperty("java.awt.headless") == null) {
-            System.setProperty("java.awt.headless", "true");
-        }
-    }
-
-    public void print(@NotNull PdfDocument document) throws PrinterServiceException {
+    /**
+     * Prints a single PDF document on the given printer device.
+     *
+     * @param document PDF data to print
+     * @param device   printer address ({@code tcp://host:9100} or device path)
+     * @param dims     label dimensions from the preset
+     * @throws PrinterServiceException if the PDF is invalid or printing fails
+     */
+    public void print(@NotNull PdfDocument document,
+                      @NotNull String device,
+                      @NotNull Dimensions dims) throws PrinterServiceException {
         validateDocument(document);
-        printValidated(document, resolveDefaultPrintService());
+        byte[] tspl = convertPdf(document, dims);
+        sendToPrinter(device, tspl);
     }
 
-    public void print(@NotNull PdfDocument document, @NotNull String printerName)
-            throws PrinterServiceException {
-        validateDocument(document);
-        printValidated(document, resolvePrintService(printerName));
-    }
-
-    public void printAll(@NotNull PdfDocument[] documents) throws PrinterServiceException {
+    /**
+     * Prints a batch of PDF documents on the given printer device.
+     *
+     * <p>All TSPL jobs are concatenated into a single transmission so
+     * the printer receives them as one continuous stream.</p>
+     *
+     * @param documents PDF documents to print
+     * @param device    printer address ({@code tcp://host:9100} or device path)
+     * @param dims      label dimensions from the preset
+     * @throws PrinterServiceException if any document is invalid or printing fails
+     */
+    public void printAll(@NotNull PdfDocument[] documents,
+                         @NotNull String device,
+                         @NotNull Dimensions dims) throws PrinterServiceException {
         if (documents == null) {
             throw new PrinterServiceException("PDF documents must not be null");
         }
+
+        var allTspl = new java.io.ByteArrayOutputStream();
         for (PdfDocument document : documents) {
             validateDocument(document);
+            byte[] tspl = convertPdf(document, dims);
+            try {
+                allTspl.write(tspl);
+            } catch (IOException e) {
+                throw new PrinterServiceException("Failed to assemble TSPL output", e);
+            }
         }
-        PrintService printService = resolveDefaultPrintService();
-        for (PdfDocument document : documents) {
-            printValidated(document, printService);
-        }
+        sendToPrinter(device, allTspl.toByteArray());
     }
 
-    public void printAll(@NotNull PdfDocument[] documents, @NotNull String printerName)
-            throws PrinterServiceException {
-        if (documents == null) {
-            throw new PrinterServiceException("PDF documents must not be null");
-        }
-        for (PdfDocument document : documents) {
-            validateDocument(document);
-        }
-        PrintService printService = resolvePrintService(printerName);
-        for (PdfDocument document : documents) {
-            printValidated(document, printService);
-        }
+    /**
+     * Lists locally-attached raw printer devices.
+     *
+     * <p>Discovery is best-effort. The returned array is never null
+     * but may be empty if no devices are found. Users can type custom
+     * addresses (like {@code tcp://192.168.1.100:9100}) directly.</p>
+     *
+     * @return discovered device addresses
+     */
+    public static String[] listDevices() {
+        return PrinterDevice.listDevices();
     }
 
-    public String[] listPrinters() {
-        PrintService[] services = PrintServiceLookup.lookupPrintServices(null, null);
-        String[] names = new String[services.length];
-        for (int i = 0; i < services.length; i++) {
-            names[i] = services[i].getName();
-        }
-        return names;
-    }
+    // ── internal ────────────────────────────────────────────────
 
     private void validateDocument(PdfDocument document) throws PrinterServiceException {
         if (document == null) {
@@ -84,49 +92,36 @@ public class PrinterService {
         }
     }
 
-    private void printValidated(PdfDocument document, PrintService printService)
+    /**
+     * Converts a single PDF document to a TSPL byte stream.
+     * Multi-page PDFs produce one label per page.
+     */
+    private byte[] convertPdf(PdfDocument document, Dimensions dims)
             throws PrinterServiceException {
-        try (PDDocument pdDocument = Loader.loadPDF(document.data())) {
-            if (pdDocument.getNumberOfPages() == 0) {
+        try (PDDocument pdf = Loader.loadPDF(document.data())) {
+            int pageCount = pdf.getNumberOfPages();
+            if (pageCount == 0) {
                 throw new PrinterServiceException("PDF document has no pages");
             }
 
-            PrintRequestAttributeSet attrs = LabelPrintLayout.createAttributes(pdDocument);
-            DocPrintJob job = printService.createPrintJob();
-            job.print(
-                    new SimpleDoc(
-                            LabelPrintLayout.createPageable(pdDocument),
-                            DocFlavor.SERVICE_FORMATTED.PAGEABLE,
-                            null),
-                    attrs);
+            var out = new java.io.ByteArrayOutputStream();
+            for (int i = 0; i < pageCount; i++) {
+                BitmapImage bitmap = PdfBitmapRenderer.renderPage(pdf, i, dims);
+                byte[] tspl = TsplLabel.generate(dims, bitmap);
+                out.write(tspl);
+            }
+            return out.toByteArray();
         } catch (IOException e) {
             throw new PrinterServiceException("Failed to load PDF document", e);
-        } catch (PrintException e) {
-            throw new PrinterServiceException("Failed to print PDF document", e);
         }
     }
 
-    private PrintService resolveDefaultPrintService() throws PrinterServiceException {
-        PrintService printService = PrintServiceLookup.lookupDefaultPrintService();
-        if (printService == null) {
-            throw new PrinterServiceException("No default print service is available");
+    private void sendToPrinter(String device, byte[] data)
+            throws PrinterServiceException {
+        try {
+            PrinterDevice.send(device, data);
+        } catch (IOException e) {
+            throw new PrinterServiceException("Failed to send data to printer", e);
         }
-        return printService;
     }
-
-    private PrintService resolvePrintService(String printerName) throws PrinterServiceException {
-        if (printerName == null || printerName.isBlank()) {
-            throw new PrinterServiceException("Printer name must not be blank");
-        }
-
-        PrintService[] services = PrintServiceLookup.lookupPrintServices(null, null);
-        for (PrintService service : services) {
-            if (service.getName().equalsIgnoreCase(printerName)) {
-                return service;
-            }
-        }
-
-        throw new PrinterServiceException("Printer not found: " + printerName);
-    }
-
 }

@@ -4,53 +4,50 @@ import java.util.function.BiConsumer;
 
 import javax.swing.SwingWorker;
 
+import io.nthcristian.prt.Dimensions;
 import io.nthcristian.zplrdr.document.PdfDocument;
 import io.nthcristian.zplrdr.gui.service.ServiceProvider;
 
 /**
  * Prints one or more PDF documents on a background thread.
  *
- * <p>Delegates to {@link io.nthcristian.prt.PrinterService#printAll(PdfDocument[])}
- * or {@link io.nthcristian.prt.PrinterService#printAll(PdfDocument[], String)}
- * depending on whether a printer name was specified. The result (or error)
- * is delivered on the EDT via the callback provided at construction.</p>
+ * <p>Converts each PDF page to a TSPL bitmap and sends raw commands
+ * to the printer device. The result (or error) is delivered on the EDT
+ * via the callback provided at construction.</p>
  */
 public class PrintWorker extends SwingWorker<Void, Void> {
 
     private final PdfDocument[] documents;
-    private final String printerName;
+    private final String device;
+    private final Dimensions dims;
     private final BiConsumer<Void, Throwable> callback;
 
     /**
      * Creates a print worker.
      *
-     * @param documents   PDFs to print
-     * @param printerName target printer, or {@code null} for system default
-     * @param callback    called on the EDT when printing completes or fails;
-     *                    receives null on success or an exception on error
+     * @param documents PDFs to print
+     * @param device    printer device address (tcp://host:9100 or device path)
+     * @param dims      label dimensions from the preset
+     * @param callback  called on the EDT when printing completes or fails
      */
-    public PrintWorker(PdfDocument[] documents, String printerName,
+    public PrintWorker(PdfDocument[] documents, String device, Dimensions dims,
                        BiConsumer<Void, Throwable> callback) {
         this.documents = documents;
-        this.printerName = printerName;
+        this.device = device;
+        this.dims = dims;
         this.callback = callback;
     }
 
     /**
-     * Called on a background thread. Submits the print job via
-     * {@code PrinterService}.
+     * Called on a background thread. Submits TSPL commands to the
+     * printer via {@code PrinterService}.
      *
      * @return null
      * @throws Exception if printing fails
      */
     @Override
     protected Void doInBackground() throws Exception {
-        var printerService = ServiceProvider.printerService();
-        if (printerName == null || printerName.isBlank()) {
-            printerService.printAll(documents);
-        } else {
-            printerService.printAll(documents, printerName);
-        }
+        ServiceProvider.printerService().printAll(documents, device, dims);
         return null;
     }
 
@@ -61,7 +58,7 @@ public class PrintWorker extends SwingWorker<Void, Void> {
     @Override
     protected void done() {
         try {
-            get(); // check for exception
+            get();
             if (callback != null) {
                 callback.accept(null, null);
             }

@@ -4,12 +4,14 @@ import java.awt.BorderLayout;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 
+import io.nthcristian.prt.Dimensions;
 import io.nthcristian.zplrdr.document.PdfDocument;
 import io.nthcristian.zplrdr.gui.service.ServiceProvider;
 import io.nthcristian.zplrdr.gui.worker.ConvertWorker;
@@ -31,6 +33,7 @@ public class MainPanel extends JPanel {
     private final OutputPanel outputPanel;
 
     private PdfDocument[] lastResult;
+    private Dimensions currentDims;
 
     /**
      * Constrói o painel principal com um split pane vertical:
@@ -62,6 +65,13 @@ public class MainPanel extends JPanel {
     }
 
     /**
+     * Limpa o último resultado para que o painel de saída possa ser reiniciado.
+     */
+    public void clearLastResult() {
+        lastResult = null;
+    }
+
+    /**
      * Chamado quando o usuário clica em "Converter" no painel de entrada.
      *
      * <p>Abre streams de entrada dos caminhos ZPL selecionados, resolve
@@ -69,6 +79,15 @@ public class MainPanel extends JPanel {
      * Em caso de sucesso, os resultados são passados ao painel de saída.
      * Em caso de falha, um diálogo de erro é exibido.</p>
      */
+    /**
+     * Called by {@link #onConvertAndPrint} after conversion completes.
+     * Delegates to {@link #onPrintResults()} which handles the device
+     * selection, progress, and user feedback.
+     */
+    private void printAfterConvert() {
+        onPrintResults();
+    }
+
     public void onConvert() {
         List<Path> paths = inputPanel.getSelectedPaths();
         if (paths == null || paths.isEmpty()) {
@@ -94,6 +113,7 @@ public class MainPanel extends JPanel {
         }
 
         outputPanel.setProgress(0);
+        currentDims = Dimensions.fromPreset(preset);
         var worker = new ConvertWorker(streams, preset, (docs, error) -> {
             if (error != null) {
                 JOptionPane.showMessageDialog(this,
@@ -140,6 +160,7 @@ public class MainPanel extends JPanel {
         }
 
         outputPanel.setProgress(0);
+        currentDims = Dimensions.fromPreset(preset);
         var convertWorker = new ConvertWorker(streams, preset, (docs, error) -> {
             if (error != null) {
                 JOptionPane.showMessageDialog(this,
@@ -149,41 +170,14 @@ public class MainPanel extends JPanel {
             } else {
                 lastResult = docs;
                 outputPanel.showResults(docs);
-                printDocuments(docs, outputPanel.getSelectedPrinter());
+                printAfterConvert();
             }
         });
         convertWorker.execute();
     }
 
-    /**
-     * Imprime os documentos PDF fornecidos na impressora selecionada.
-     *
-     * @param documents   PDFs a imprimir
-     * @param printerName impressora de destino, ou null para a padrão do sistema
-     */
-    public void printDocuments(PdfDocument[] documents, String printerName) {
-        if (documents == null || documents.length == 0) {
-            JOptionPane.showMessageDialog(this,
-                    "Nenhum documento para imprimir.",
-                    "Erro de impressão", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        var worker = new PrintWorker(documents, printerName, (v, error) -> {
-            if (error != null) {
-                JOptionPane.showMessageDialog(this,
-                        "Falha na impressão: " + error.getMessage(),
-                        "Erro de impressão", JOptionPane.ERROR_MESSAGE);
-            } else {
-                String target = (printerName != null && !printerName.isBlank())
-                        ? printerName : "impressora padrão";
-                JOptionPane.showMessageDialog(this,
-                        "Impressos " + documents.length + " documento(s) em " + target + ".",
-                        "Impressão concluída", JOptionPane.INFORMATION_MESSAGE);
-            }
-        });
-        worker.execute();
-    }
+    // printDocuments removed — onPrintResults() now handles the full
+    // print flow including validation, progress, and user feedback.
 
     /**
      * Atualiza a caixa de seleção de predefinições no painel de entrada
@@ -194,11 +188,102 @@ public class MainPanel extends JPanel {
     }
 
     /**
+     * Chamado pelo InputPanel quando o usuário carrega arquivos PDF
+     * diretamente (sem conversão ZPL). Os PDFs são armazenados como
+     * resultado para impressão imediata. As dimensões da etiqueta são
+     * extraídas da predefinição selecionada.
+     */
+    public void onPdfsLoaded(List<Path> pdfPaths) {
+        try {
+            var docs = new PdfDocument[pdfPaths.size()];
+            for (int i = 0; i < pdfPaths.size(); i++) {
+                docs[i] = new PdfDocument(Files.readAllBytes(pdfPaths.get(i)));
+            }
+            lastResult = docs;
+
+            // Resolve dimensions from the currently selected preset
+            Preset preset = resolvePresetSilently();
+            if (preset != null) {
+                currentDims = Dimensions.fromPreset(preset);
+            }
+
+            outputPanel.showResults(docs);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Falha ao carregar PDFs: " + e.getMessage(),
+                    "Erro", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Chamado pelo painel de saída quando o usuário clica em
+     * "Imprimir resultados". Usa o último resultado de conversão,
+     * o dispositivo selecionado e as dimensões atuais da etiqueta.
+     */
+    public void onPrintResults() {
+        if (lastResult == null || lastResult.length == 0) {
+            JOptionPane.showMessageDialog(this,
+                    "Nenhum documento para imprimir.",
+                    "Erro de impressão", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (currentDims == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Selecione uma predefinição primeiro.",
+                    "Erro de impressão", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        String device = outputPanel.getSelectedDevice();
+        if (device == null || device.isBlank()) {
+            JOptionPane.showMessageDialog(this,
+                    "Selecione ou digite um endereço de dispositivo.",
+                    "Erro de impressão", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        outputPanel.setPrinting(true);
+        new PrintWorker(lastResult, device, currentDims, (v, error) -> {
+            outputPanel.setPrinting(false);
+            if (error != null) {
+                JOptionPane.showMessageDialog(this,
+                        "Falha na impressão: " + error.getMessage(),
+                        "Erro de impressão", JOptionPane.ERROR_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Impressos " + lastResult.length + " documento(s) em " + device + ".",
+                        "Impressão concluída", JOptionPane.INFORMATION_MESSAGE);
+            }
+        }).execute();
+    }
+
+    /**
+     * Retorna as dimensões atuais da etiqueta da última predefinição usada.
+     *
+     * @return as dimensões atuais, ou null
+     */
+    public Dimensions getCurrentDims() {
+        return currentDims;
+    }
+
+    /**
      * Encaminha uma solicitação de adicionar arquivos ao painel de entrada
      * (usado pela barra de menus).
      */
     public void requestAddFiles() {
         inputPanel.addFiles();
+    }
+
+    /**
+     * Resolve a predefinição selecionada sem exibir diálogos de erro.
+     *
+     * @return o Preset, ou null se nenhuma predefinição estiver selecionada
+     */
+    private Preset resolvePresetSilently() {
+        String presetName = inputPanel.getSelectedPresetName();
+        if (presetName == null) {
+            return null;
+        }
+        return ServiceProvider.presetService().getPreset(presetName);
     }
 
     /**

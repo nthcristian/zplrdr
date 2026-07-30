@@ -7,10 +7,10 @@ import javax.swing.SwingWorker;
 import io.nthcristian.zplrdr.gui.service.ServiceProvider;
 
 /**
- * Retrieves the list of available system printers on a background thread.
+ * Retrieves the list of available printer devices on a background thread.
  *
- * <p>Delegates to {@link io.nthcristian.prt.PrinterService#listPrinters()}
- * which calls the Java Print Service lookup API. The returned
+ * <p>Delegates to {@link io.nthcristian.prt.PrinterService#listDevices()}
+ * which scans for locally-attached raw printer devices. The returned
  * {@code String[]} is delivered on the EDT via the callback provided
  * at construction.</p>
  */
@@ -22,7 +22,7 @@ public class PrinterListWorker extends SwingWorker<String[], Void> {
      * Creates a printer list worker.
      *
      * @param callback called on the EDT when the lookup completes or fails;
-     *                 receives the printer name array on success or an
+     *                 receives the device address array on success or an
      *                 exception on error
      */
     public PrinterListWorker(BiConsumer<String[], Throwable> callback) {
@@ -30,15 +30,14 @@ public class PrinterListWorker extends SwingWorker<String[], Void> {
     }
 
     /**
-     * Called on a background thread. Queries the Java Print Service for
-     * available printer names.
+     * Called on a background thread. Scans for raw printer devices.
      *
-     * @return an array of printer names (empty array if none found)
+     * @return an array of device addresses (empty array if none found)
      * @throws Exception if the lookup fails
      */
     @Override
     protected String[] doInBackground() throws Exception {
-        return ServiceProvider.printerService().listPrinters();
+        return ServiceProvider.printerService().listDevices();
     }
 
     /**

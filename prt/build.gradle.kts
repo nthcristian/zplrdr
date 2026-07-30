@@ -24,5 +24,4 @@ java {
 
 tasks.named<Test>("test") {
     useJUnitPlatform()
-    systemProperty("java.awt.headless", "true")
 }

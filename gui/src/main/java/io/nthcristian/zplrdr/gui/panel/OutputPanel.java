@@ -58,10 +58,11 @@ public class OutputPanel extends JPanel {
         resultTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         resultTable.setFillsViewportHeight(true);
 
-        // --- Seletor de impressora ---
+        // --- Seletor de dispositivo ---
         var printerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
-        printerPanel.add(new JLabel("Impressora:"));
+        printerPanel.add(new JLabel("Dispositivo:"));
         printerCombo = new JComboBox<>();
+        printerCombo.setEditable(true);
         printerPanel.add(printerCombo);
 
         var refreshButton = new JButton("Atualizar");
@@ -71,17 +72,19 @@ public class OutputPanel extends JPanel {
         // --- Botões de ação ---
         var actionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         var printButton = new JButton("Imprimir resultados");
-        printButton.addActionListener(e -> {
-            PdfDocument[] docs = parent.getLastResult();
-            if (docs != null) {
-                parent.printDocuments(docs, getSelectedPrinter());
-            }
-        });
+        printButton.addActionListener(e -> parent.onPrintResults());
         actionPanel.add(printButton);
 
         var saveAsButton = new JButton("Salvar como...");
         saveAsButton.addActionListener(e -> saveResults());
         actionPanel.add(saveAsButton);
+
+        var clearButton = new JButton("Limpar");
+        clearButton.addActionListener(e -> {
+            clearResults();
+            parent.clearLastResult();
+        });
+        actionPanel.add(clearButton);
 
         // --- Barra de progresso ---
         progressBar = new JProgressBar(0, 100);
@@ -124,24 +127,40 @@ public class OutputPanel extends JPanel {
      * @param percent valor de progresso (0–100)
      */
     public void setProgress(int percent) {
+        progressBar.setIndeterminate(false);
         progressBar.setValue(Math.clamp(percent, 0, 100));
+    }
+
+    /**
+     * Ativa ou desativa o modo indeterminado da barra de progresso
+     * (usado durante a impressão, que não tem etapas mensuráveis).
+     *
+     * @param printing true para iniciar, false para concluir
+     */
+    public void setPrinting(boolean printing) {
+        if (printing) {
+            progressBar.setIndeterminate(true);
+        } else {
+            progressBar.setIndeterminate(false);
+            progressBar.setValue(100);
+        }
     }
 
     /**
      * Atualiza a lista de impressoras iniciando um PrinterListWorker.
      */
     public void refreshPrinters() {
-        var worker = new PrinterListWorker((printers, error) -> {
+        var worker = new PrinterListWorker((devices, error) -> {
             if (error != null) {
                 JOptionPane.showMessageDialog(this,
-                        "Falha ao listar impressoras: " + error.getMessage(),
-                        "Erro de impressora", JOptionPane.ERROR_MESSAGE);
+                        "Falha ao listar dispositivos: " + error.getMessage(),
+                        "Erro", JOptionPane.ERROR_MESSAGE);
                 return;
             }
             printerCombo.removeAllItems();
-            if (printers != null) {
-                for (String printer : printers) {
-                    printerCombo.addItem(printer);
+            if (devices != null) {
+                for (String device : devices) {
+                    printerCombo.addItem(device);
                 }
             }
         });
@@ -149,12 +168,11 @@ public class OutputPanel extends JPanel {
     }
 
     /**
-     * Retorna o nome da impressora atualmente selecionada, ou null
-     * para a padrão do sistema.
+     * Retorna o endereço do dispositivo atualmente selecionado.
      *
-     * @return o nome da impressora selecionada, ou null
+     * @return o endereço do dispositivo (tcp://host:9100 ou caminho), ou null
      */
-    public String getSelectedPrinter() {
+    public String getSelectedDevice() {
         Object item = printerCombo.getSelectedItem();
         return item != null ? item.toString() : null;
     }
