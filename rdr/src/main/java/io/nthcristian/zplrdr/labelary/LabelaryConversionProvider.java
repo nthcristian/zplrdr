@@ -145,7 +145,8 @@ public class LabelaryConversionProvider implements ConversionProvider {
         } catch (IOException e) {
             throw new ConversionProviderException("Failed to send batch to Labelary", e);
         } catch (InterruptedException e) {
-            throw new ConversionProviderException("");
+            Thread.currentThread().interrupt();
+            throw new ConversionProviderException("Labelary request was interrupted", e);
         }
     }
 }

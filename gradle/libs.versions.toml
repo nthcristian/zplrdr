@@ -2,8 +2,6 @@
 # https://docs.gradle.org/current/userguide/version_catalogs.html#sec::toml-dependencies-format
 
 [versions]
-commons-math3 = "3.6.1"
-guava = "33.5.0-jre"
 junit-jupiter = "6.0.1"
 jakarta-validation = "3.1.0"
 hibernate-validator = "8.0.2.Final"
@@ -13,8 +11,6 @@ pdfbox = "3.0.4"
 picocli = "4.7.6"
 
 [libraries]
-commons-math3 = { module = "org.apache.commons:commons-math3", version.ref = "commons-math3" }
-guava = { module = "com.google.guava:guava", version.ref = "guava" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
 jakarta-validation-api = { module = "jakarta.validation:jakarta.validation-api", version.ref = "jakarta-validation" }
 hibernate-validator = { module = "org.hibernate.validator:hibernate-validator", version.ref = "hibernate-validator" }

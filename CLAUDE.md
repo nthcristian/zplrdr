@@ -83,10 +83,23 @@ Uses **picocli** for argument parsing. Entry point: `Main.java`. Subcommands:
 
 ### `:prt` — Print service library (`io.nthcristian.prt`)
 
-Wraps the Java Print Service API for thermal label printing. **Not a CUPS client** — uses `javax.print` directly, falling back to the system's default print service.
+Converts PDF pages to monochrome bitmaps and sends raw TSPL commands directly to
+thermal label printers — **bypassing the OS print driver entirely**. No `javax.print`,
+no CUPS, no spooler.
 
-- **`PrinterService`** — print `PdfDocument` objects (single or batch) to the default printer or a named printer. Loads PDFs via PDFBox, validates them, then submits print jobs with `LabelPrintLayout`. Has a static guard that sets `java.awt.headless=true` only when no explicit value is present — the GUI pre-sets `"false"` so AWT initializes in windowed mode.
-- **`LabelPrintLayout`** — creates `Pageable` and `PrintRequestAttributeSet` tuned for direct-thermal label printers (full-bleed, monochrome, correct orientation). Hardcoded for 203 DPI printers like the Tomate MDK-006.
+- **`Dimensions`** — record `(widthMm, heightMm, dpi)`. Factory `fromPreset(Preset)` converts
+  preset inches → mm via `widthInches * 25.4`.
+- **`PdfBitmapRenderer`** — renders a PDF page at 2× DPI (supersampling), scales to exact
+  label dot dimensions, thresholds to monochrome, packs 8 pixels/byte (MSB first), and
+  XORs every byte with `0xFF` to match TSPL bit order. Returns `BitmapImage(width, height, data)`.
+- **`TsplLabel`** — generates one TSPL job per label: `SIZE w mm,h mm` → `CLS` →
+  `BITMAP 0,0,rowBytes,height,0,<data>` → `PRINT 1,1`. Bitmap placed at origin (0,0),
+  no centering (the Labelary PDF already matches label dimensions).
+- **`PrinterDevice`** — cross-platform raw sender. `send(address, data)` dispatches to
+  TCP socket (`tcp://host:9100`) or device file (`/dev/usb/lp0`). `listDevices()` scans
+  `/dev/usb/lp*` (Linux) and `/dev/cu.usb*` (macOS).
+- **`PrinterService`** — top-level API. `print(doc, device, dims)`, `printAll(docs, device, dims)`,
+  `listDevices()`. Flow: load PDF → render each page as bitmap → generate TSPL → send raw bytes.
 
 ### `:gui` — Swing GUI application (`io.nthcristian.zplrdr.gui`)
 
@@ -95,19 +108,19 @@ A Portuguese (BR) desktop GUI built with Swing (zero additional dependencies). M
 Entry point: `Main.java` — sets `java.awt.headless=false` and `awt.useSystemAAFontSettings=on` before AWT initializes, then launches `GuiApplication` on the EDT.
 
 Package structure:
-- **`service/ServiceProvider.java`** — static factory that lazy-inits `ZplConverter`, `PresetService`, and `PrinterService` via the existing builders (mirrors `CliSupport`).
+- **`service/ServiceProvider.java`** — static factory that lazy-inits `ZplConverter`, `PresetService`, and `PrinterService` via the existing builders (mirrors `CliSupport`). Synchronized for thread safety.
 - **`worker/`** — `SwingWorker` subclasses for all blocking operations off the EDT:
   - `ConvertWorker` — ZPL → PDF (calls Labelary API)
-  - `PrintWorker` — print PDF documents
-  - `PrinterListWorker` — list available printers
+  - `PrintWorker` — converts PDF pages to TSPL and sends to device
+  - `PrinterListWorker` — scans for locally-attached printer devices
   Each takes a `BiConsumer` callback called on the EDT after completion.
 - **`panel/MainPanel.java`** — root mediator panel (JSplitPane). Owns the conversion lifecycle, coordinates `InputPanel` ↔ `OutputPanel` so child panels never reference each other directly.
-- **`panel/InputPanel.java`** — file picker (JFileChooser + table), preset combo box, action buttons (Converter, Converter e Imprimir).
-- **`panel/OutputPanel.java`** — results table, printer combo (with refresh), progress bar, Print/Save buttons. Save uses a directory chooser and GUID-based file names (`etiqueta-<UUID>.pdf`).
+- **`panel/InputPanel.java`** — file picker (JFileChooser + table), preset combo box, action buttons (Converter, Converter e Imprimir). Also has "Carregar PDFs" for loading existing PDFs directly.
+- **`panel/OutputPanel.java`** — results table, printer combo (with refresh), progress bar, Print/Save buttons. Save uses a directory chooser and GUID-based file names (`etiqueta-<UUID>.pdf`). Has a "Limpar" button to clear results.
 - **`dialog/PresetManagerDialog.java`** — modal dialog for preset CRUD (list, create, edit fields, delete).
 - **`dialog/AboutDialog.java`** — about dialog with version info.
 - **`table/`** — `AbstractTableModel` subclasses for ZPL file list and PDF results.
-- **`error/GuiException.java`** — checked exception following the project's pattern.
+- **`util/FormatUtil.java`** — shared byte-size formatting utility.
 
 ### Design Patterns
 
@@ -116,7 +129,7 @@ Package structure:
 - **Repository**: `PresetRepository` abstracts file-based JSON persistence.
 - **Mediator**: `MainPanel` coordinates child panels; they never depend on each other.
 - **SwingWorker**: All blocking I/O runs off the EDT via background workers with EDT callbacks.
-- **Records** (Java records): `PdfDocument`, `ZplDocument`, `ZplLabel`, `Preset`, `LabelaryClientConfig` are all immutable value types.
+- **Records** (Java records): `PdfDocument`, `ZplDocument`, `ZplLabel`, `Preset`, `LabelaryClientConfig`, `Dimensions` are all immutable value types.
 - **Template Method**: `AbstractPresetSchema` provides field-name/default-value management; subclasses supply `FieldDefinition` maps.
 
 ### Test Fixtures
@@ -125,4 +138,4 @@ Package structure:
 
 ### Preset Format
 
-Presets are stored as JSON files named `<name>.json` in `~/.local/share/zplrdr/`. Each file is a flat `Map<String, String>`. The Labelary schema requires three fields: `dpmm` (numeric, e.g. `"8"`), `width` (numeric in dots), `height` (numeric in dots).
+Presets are stored as JSON files named `<name>.json` in `~/.local/share/zplrdr/`. Each file is a flat `Map<String, String>`. The Labelary schema requires three fields: `dpmm` (numeric, e.g. `"8"`), `width` (numeric in inches, e.g. `"4"`), `height` (numeric in inches, e.g. `"6"`).

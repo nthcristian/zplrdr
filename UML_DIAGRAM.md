@@ -28,13 +28,11 @@ classDiagram
         +byte[] content
     }
 
-    %% Labelary Sub-package payload
     class ZplLabel {
         <<record>>
         +byte[] content
     }
 
-    %% Domain models
     class Preset {
         <<record>>
         +String name
@@ -43,142 +41,118 @@ classDiagram
         +withProperty(String field, String value) Preset
     }
 
-    %% Repository Pattern
-    class PresetRepository {
-        -Path storagePath
-        -Map~String, Map~String, String~~ cache
-        +PresetRepository(String storageDirectory)
-        +findById(String presetName) Map~String, String~
-        +findAll() Map~String, Map~String, String~~
-        +save(String presetName, Map~String, String~ fields)
-        +deleteById(String presetName)
-        -resolveFilePath(String presetName) Path
-        -ensureStorageDirectory()
-    }
-
-    %% Abstract Base (Template Method Pattern)
-    class AbstractPresetSchema {
-        -Map~String, FieldDefinition~ requiredFields
-        +getDefaultValue(String field) Object
-        +getFieldNames() Set~String~
-        #getRequiredFieldDefinitions() Map~String, FieldDefinition~
-    }
-
-    class FieldDefinition {
+    class Dimensions {
         <<record>>
-        +Object defaultValue
-        +of(Object defaultValue)$ FieldDefinition
+        +int widthMm
+        +int heightMm
+        +float dpi
+        +fromPreset(Preset)$ Dimensions
+        +widthDots() int
+        +heightDots() int
     }
 
-    %% Configuration
     class LabelaryClientConfig {
         <<record>>
         +String baseUrl
         +String apiKey
     }
 
-    %% Error Handling (Granular Exceptions)
-    class PresetValidationException {
-        +PresetValidationException(String message)
-        +PresetValidationException(String message, Throwable cause)
+    %% Repository
+    class PresetRepository {
+        -Path storagePath
+        +findById(String) Map~String,String~
+        +findAll() Map~String,Map~String,String~~
+        +save(String, Map)
+        +deleteById(String)
     }
 
-    class ProviderConversionException {
-        +ProviderConversionException(String message)
-        +ProviderConversionException(String message, Throwable cause)
+    %% Abstract Base (Template Method)
+    class AbstractPresetSchema {
+        -Map~String, FieldDefinition~ requiredFields
+        +getDefaultValue(String) Object
+        +getFieldNames() Set~String~
     }
 
-    class PresetServiceException {
-        +PresetServiceException(String message)
-        +PresetServiceException(String message, Throwable cause)
+    class FieldDefinition {
+        <<record>>
+        +Object defaultValue
     }
 
-    class ZplConversionException {
-        +ZplConversionException(String message)
-        +ZplConversionException(String message, Throwable cause)
-    }
-
-    class PresetStorageException {
-        +PresetStorageException(String message)
-        +PresetStorageException(String message, Throwable cause)
-    }
-
-    class PrinterServiceException {
-        +PrinterServiceException(String message)
-        +PrinterServiceException(String message, Throwable cause)
-    }
-
-    class GuiException {
-        +GuiException(String message)
-        +GuiException(String message, Throwable cause)
-    }
+    %% Exceptions
+    class ZplConverterException
+    class ConversionProviderException
+    class PresetServiceException
+    class PresetSchemaException
+    class PresetStorageException
+    class PrinterServiceException
 
     %% Implementations
     class LabelaryConversionProvider {
         -static final int BATCH_SIZE
         -LabelaryClientConfig config
-        +LabelaryConversionProvider(LabelaryClientConfig config)
         +convert(ZplDocument[], Preset) PdfDocument[]*
-        -partitionIntoBatches(ZplDocument) ZplLabel[][]
-        -executeBatchRequest(String url, ZplLabel[]) PdfDocument
+        -splitIntoBatches(ZplDocument) ZplLabel[][]
+        -sendBatch(String, ZplLabel[]) PdfDocument
     }
 
     class LabelaryPresetSchema {
-        -Pattern DPMM_PATTERN$
-        -Pattern NUMERIC_PATTERN$
-        +validate(Map~String, String~ fields)*
+        +validate(Map~String,String~ fields)*
     }
 
-    %% Orchestration (Service / Facade Patterns)
+    %% Orchestration
     class ZplConverter {
         -ConversionProvider provider
-        -static final String ZPL_START_TAG$
-        -static final String ZPL_END_TAG$
-        +ZplConverter(ConversionProvider provider)
         +convertAll(InputStream[], Preset) PdfDocument[]*
-        -parseAndValidate(InputStream) ZplDocument
-        -validateFormat(byte[] content)
+        -validateFormat(byte[]) void
     }
 
     class PresetService {
-        -Map~String, Preset~ activePresets
+        -Map~String,Preset~ activePresets
         -PresetSchema schema
         -PresetRepository repository
-        +PresetService(PresetSchema schema, PresetRepository repository)
-        +getPreset(String name) Preset
-        +createPreset(String name) Preset
-        +savePreset(Preset preset) Preset
-        +deletePreset(String name)
-        -initializeCache()
+        +getPreset(String) Preset
+        +createPreset(String) Preset
+        +savePreset(Preset) Preset
+        +deletePreset(String) void
     }
 
-    %% Print Service
+    %% Print Service (TSPL-based)
     class PrinterService {
-        +PrinterService()
-        +print(PdfDocument) void
-        +print(PdfDocument, String) void
-        +printAll(PdfDocument[]) void
-        +printAll(PdfDocument[], String) void
-        +listPrinters() String[]
-        -validateDocument(PdfDocument)
-        -printValidated(PdfDocument, PrintService)
-        -resolveDefaultPrintService() PrintService
-        -resolvePrintService(String) PrintService
+        +print(PdfDocument, String device, Dimensions)
+        +printAll(PdfDocument[], String device, Dimensions)
+        +listDevices()$ String[]
+        -convertPdf(PdfDocument, Dimensions) byte[]
+        -sendToPrinter(String, byte[]) void
     }
 
-    class LabelPrintLayout {
-        -static final float PRINTER_DPI
-        +createPageable(PDDocument)$ Pageable
-        +createAttributes(PDDocument)$ PrintRequestAttributeSet
-        +pageSizeInches(PDPage) PageSizeInches
-        +isFullBleed(PageFormat) boolean
+    class PdfBitmapRenderer {
+        +renderPage(PDDocument, int, Dimensions)$ BitmapImage
+        +toMonochrome(BufferedImage)$ byte[]
+        -scaleImage(BufferedImage, int, int)$ BufferedImage
+    }
+
+    class BitmapImage {
+        <<record>>
+        +int width
+        +int height
+        +byte[] data
+    }
+
+    class TsplLabel {
+        +generate(Dimensions, BitmapImage)$ byte[]
+    }
+
+    class PrinterDevice {
+        +send(String address, byte[])$ void
+        +listDevices()$ String[]
+        -sendTcp(String, byte[])$ void
     }
 
     %% GUI Layer
     class GuiApplication {
         -MainPanel mainPanel
         +GuiApplication()
-        -createMenuBar() JMenuBar
+        -createMenuBar()
         -openPresetManager()
         -openAboutDialog()
     }
@@ -196,18 +170,24 @@ classDiagram
         -InputPanel inputPanel
         -OutputPanel outputPanel
         -PdfDocument[] lastResult
-        +MainPanel()
+        -Dimensions currentDims
         +onConvert()
         +onConvertAndPrint()
-        +printDocuments(PdfDocument[], String)
+        +onPrintResults()
+        +onPdfsLoaded(List~Path~)
+        +clearLastResult()
         +refreshPresets()
         +requestAddFiles()
+        -resolvePreset() Preset
+        -resolvePresetSilently() Preset
+        -closeStreams(InputStream[]) void
     }
 
     class InputPanel {
         -ZplFileTableModel fileTableModel
-        -JComboBox presetCombo
+        -JComboBox~String~ presetCombo
         +addFiles()
+        +loadPdfs()
         +removeSelected()
         +refreshPresets()
         +getSelectedPaths() List~Path~
@@ -216,19 +196,19 @@ classDiagram
 
     class OutputPanel {
         -PdfResultTableModel resultTableModel
-        -JComboBox printerCombo
+        -JComboBox~String~ printerCombo
         -JProgressBar progressBar
         +showResults(PdfDocument[])
         +clearResults()
         +setProgress(int)
+        +setPrinting(boolean)
         +refreshPrinters()
-        +getSelectedPrinter() String
+        +getSelectedDevice() String
         -saveResults()
     }
 
     class PresetManagerDialog {
         -PresetService presetService
-        -DefaultListModel listModel
         -boolean modified
         +PresetManagerDialog(Frame, PresetService)
         +isModified() boolean
@@ -242,23 +222,28 @@ classDiagram
     class ConvertWorker {
         -InputStream[] files
         -Preset preset
-        -BiConsumer callback
+        -BiConsumer~PdfDocument[],Throwable~ callback
         +ConvertWorker(InputStream[], Preset, BiConsumer)
         +doInBackground() PdfDocument[]
     }
 
     class PrintWorker {
         -PdfDocument[] documents
-        -String printerName
-        -BiConsumer callback
-        +PrintWorker(PdfDocument[], String, BiConsumer)
+        -String device
+        -Dimensions dims
+        -BiConsumer~Void,Throwable~ callback
+        +PrintWorker(PdfDocument[], String, Dimensions, BiConsumer)
         +doInBackground() Void
     }
 
     class PrinterListWorker {
-        -BiConsumer callback
+        -BiConsumer~String[],Throwable~ callback
         +PrinterListWorker(BiConsumer)
         +doInBackground() String[]
+    }
+
+    class FormatUtil {
+        +formatSize(long)$ String
     }
 
     %% Relationships — Implementations
@@ -267,33 +252,33 @@ classDiagram
     AbstractPresetSchema <|-- LabelaryPresetSchema : extends
     AbstractPresetSchema *-- FieldDefinition : inner record
 
-    %% Relationships — Core Dependencies
-    ZplConverter --> ConversionProvider : delegates to
+    %% Relationships — Core
+    ZplConverter --> ConversionProvider : delegates
     ZplConverter --> Preset : uses
     ZplConverter ..> ZplDocument : creates
-    ZplConverter ..> ZplConversionException : throws
+    ZplConverter ..> ZplConverterException : throws
 
     PresetService --> PresetSchema : uses
     PresetService --> PresetRepository : uses
     PresetService --> Preset : manages
     PresetService ..> PresetServiceException : throws
-    PresetService ..> PresetValidationException : throws
 
     PresetRepository ..> PresetStorageException : throws
-    PresetRepository ..> Preset : loads/saves (fields)
 
     LabelaryConversionProvider --> LabelaryClientConfig : configured by
     LabelaryConversionProvider ..> ZplLabel : partitions into
     LabelaryConversionProvider ..> PdfDocument : produces
-    LabelaryConversionProvider ..> ProviderConversionException : throws
+    LabelaryConversionProvider ..> ConversionProviderException : throws
 
-    LabelaryPresetSchema ..> PresetValidationException : throws
-
-    PrinterService ..> PdfDocument : prints
-    PrinterService --> LabelPrintLayout : uses
+    %% Relationships — Print
+    PrinterService --> PdfBitmapRenderer : uses
+    PrinterService --> TsplLabel : uses
+    PrinterService --> PrinterDevice : uses
+    PrinterService --> Dimensions : uses
     PrinterService ..> PrinterServiceException : throws
+    PdfBitmapRenderer ..> BitmapImage : returns
 
-    %% Relationships — GUI Layer
+    %% Relationships — GUI
     GuiApplication --> MainPanel : contains
     GuiApplication --> PresetManagerDialog : opens
     GuiApplication ..> ServiceProvider : uses
@@ -307,23 +292,26 @@ classDiagram
     MainPanel --> ConvertWorker : starts
     MainPanel --> PrintWorker : starts
     MainPanel ..> ServiceProvider : uses
+    MainPanel --> Dimensions : creates
 
     InputPanel ..> ServiceProvider : uses
 
     OutputPanel --> PrinterListWorker : starts
 
-    PresetManagerDialog --> PresetService : delegates to
+    PresetManagerDialog --> PresetService : delegates
 
     ConvertWorker ..> ZplConverter : calls
     PrintWorker ..> PrinterService : calls
     PrinterListWorker ..> PrinterService : calls
 
+    PdfResultTableModel ..> FormatUtil : uses
+    ZplFileTableModel ..> FormatUtil : uses
+
     %% Inheritance — Exceptions
-    PresetValidationException --|> Exception : extends
-    ProviderConversionException --|> Exception : extends
-    PresetServiceException --|> Exception : extends
-    ZplConversionException --|> Exception : extends
-    PresetStorageException --|> Exception : extends
-    PrinterServiceException --|> Exception : extends
-    GuiException --|> Exception : extends
+    ZplConverterException --|> Exception
+    ConversionProviderException --|> Exception
+    PresetServiceException --|> Exception
+    PresetSchemaException --|> Exception
+    PresetStorageException --|> Exception
+    PrinterServiceException --|> Exception
 ```

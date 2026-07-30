@@ -15,9 +15,9 @@ import io.nthcristian.zplrdr.builder.ZplConverterBuilder;
  * while keeping callers free of wiring details — mirroring the
  * {@code CliSupport} pattern from the CLI module.</p>
  *
- * <p>Thread-safety: lazy initialization is not synchronized; concurrent
- * callers may race on first access but always receive the same instance
- * because the builders are idempotent.</p>
+ * <p>Thread-safety: lazy initialization is synchronized so only one
+ * instance of each service is ever created, even under concurrent
+ * first access from multiple SwingWorkers.</p>
  */
 public final class ServiceProvider {
 
@@ -33,7 +33,7 @@ public final class ServiceProvider {
      *
      * @return a {@code ZplConverter} backed by the Labelary conversion provider
      */
-    public static ZplConverter zplConverter() {
+    public static synchronized ZplConverter zplConverter() {
         if (converter == null) {
             converter = ZplConverterBuilder.build();
         }
@@ -46,7 +46,7 @@ public final class ServiceProvider {
      * @return a {@code PresetService} backed by the Labelary preset schema
      *         and file-based repository
      */
-    public static PresetService presetService() {
+    public static synchronized PresetService presetService() {
         if (presetService == null) {
             presetService = PresetServiceBuilder.build();
         }
@@ -56,9 +56,10 @@ public final class ServiceProvider {
     /**
      * Returns the shared {@link PrinterService}, building it on first access.
      *
-     * @return a {@code PrinterService} wrapping the Java Print Service API
+     * @return a {@code PrinterService} that sends raw TSPL commands
+     *         directly to the printer device
      */
-    public static PrinterService printerService() {
+    public static synchronized PrinterService printerService() {
         if (printerService == null) {
             printerService = new PrinterService();
         }

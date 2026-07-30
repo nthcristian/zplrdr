@@ -3,6 +3,7 @@ package io.nthcristian.zplrdr.gui.table;
 import javax.swing.table.AbstractTableModel;
 
 import io.nthcristian.zplrdr.document.PdfDocument;
+import io.nthcristian.zplrdr.gui.util.FormatUtil;
 
 /**
  * Modelo de tabela para os resultados de documentos PDF convertidos.
@@ -61,20 +62,9 @@ public class PdfResultTableModel extends AbstractTableModel {
         PdfDocument doc = documents[row];
         return switch (col) {
             case 0 -> row + 1;
-            case 1 -> formatSize(doc.data().length);
+            case 1 -> FormatUtil.formatSize(doc.data().length);
             default -> null;
         };
     }
 
-    private static String formatSize(int bytes) {
-        if (bytes < 1024) {
-            return bytes + " B";
-        }
-        double kb = bytes / 1024.0;
-        if (kb < 1024) {
-            return String.format("%.1f KB", kb);
-        }
-        double mb = kb / 1024.0;
-        return String.format("%.1f MB", mb);
-    }
 }

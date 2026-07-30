@@ -115,14 +115,18 @@ public class MainPanel extends JPanel {
         outputPanel.setProgress(0);
         currentDims = Dimensions.fromPreset(preset);
         var worker = new ConvertWorker(streams, preset, (docs, error) -> {
-            if (error != null) {
-                JOptionPane.showMessageDialog(this,
-                        "Falha na conversão: " + error.getMessage(),
-                        "Erro de conversão", JOptionPane.ERROR_MESSAGE);
-                outputPanel.setProgress(0);
-            } else {
-                lastResult = docs;
-                outputPanel.showResults(docs);
+            try {
+                if (error != null) {
+                    JOptionPane.showMessageDialog(this,
+                            "Falha na conversão: " + error.getMessage(),
+                            "Erro de conversão", JOptionPane.ERROR_MESSAGE);
+                    outputPanel.setProgress(0);
+                } else {
+                    lastResult = docs;
+                    outputPanel.showResults(docs);
+                }
+            } finally {
+                closeStreams(streams);
             }
         });
         worker.execute();
@@ -162,22 +166,23 @@ public class MainPanel extends JPanel {
         outputPanel.setProgress(0);
         currentDims = Dimensions.fromPreset(preset);
         var convertWorker = new ConvertWorker(streams, preset, (docs, error) -> {
-            if (error != null) {
-                JOptionPane.showMessageDialog(this,
-                        "Falha na conversão: " + error.getMessage(),
-                        "Erro de conversão", JOptionPane.ERROR_MESSAGE);
-                outputPanel.setProgress(0);
-            } else {
-                lastResult = docs;
-                outputPanel.showResults(docs);
-                printAfterConvert();
+            try {
+                if (error != null) {
+                    JOptionPane.showMessageDialog(this,
+                            "Falha na conversão: " + error.getMessage(),
+                            "Erro de conversão", JOptionPane.ERROR_MESSAGE);
+                    outputPanel.setProgress(0);
+                } else {
+                    lastResult = docs;
+                    outputPanel.showResults(docs);
+                    printAfterConvert();
+                }
+            } finally {
+                closeStreams(streams);
             }
         });
         convertWorker.execute();
     }
-
-    // printDocuments removed — onPrintResults() now handles the full
-    // print flow including validation, progress, and user feedback.
 
     /**
      * Atualiza a caixa de seleção de predefinições no painel de entrada
@@ -318,5 +323,15 @@ public class MainPanel extends JPanel {
             streams[i] = Files.newInputStream(paths.get(i));
         }
         return streams;
+    }
+
+    private static void closeStreams(InputStream[] streams) {
+        for (InputStream s : streams) {
+            try {
+                s.close();
+            } catch (Exception ignored) {
+                // best-effort
+            }
+        }
     }
 }

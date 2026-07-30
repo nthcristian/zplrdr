@@ -5,10 +5,9 @@ import javax.swing.SwingUtilities;
 /**
  * Entry point for the zplrdr Swing GUI.
  *
- * <p>Sets {@code java.awt.headless} to {@code false} <em>before</em> any
- * AWT or PrinterService class is loaded, ensuring the desktop window can
- * be created. The GUI is then started on the Event Dispatch Thread via
- * {@link SwingUtilities#invokeLater}.</p>
+ * <p>Sets {@code java.awt.headless} to {@code false} and enables font
+ * antialiasing <em>before</em> AWT initializes. The GUI is then started
+ * on the Event Dispatch Thread via {@link SwingUtilities#invokeLater}.</p>
  */
 public final class Main {
 
@@ -18,11 +17,10 @@ public final class Main {
     /**
      * Launches the zplrdr GUI application.
      *
-     * <p>The headless property <em>must</em> be set as the very first
-     * statement. {@link io.nthcristian.prt.PrinterService} has a static
-     * initializer that only sets headless when no explicit value exists,
-     * so this override takes precedence and allows Swing windows to be
-     * created.</p>
+     * <p>Properties <em>must</em> be set before any AWT class loads.
+     * The TSPL-based {@link io.nthcristian.prt.PrinterService} does not
+     * touch AWT at all, but setting headless=false is still good practice
+     * for Swing applications.</p>
      *
      * @param args command-line arguments (currently unused)
      */

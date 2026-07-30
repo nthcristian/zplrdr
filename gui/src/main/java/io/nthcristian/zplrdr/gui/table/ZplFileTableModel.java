@@ -8,6 +8,8 @@ import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
 
+import io.nthcristian.zplrdr.gui.util.FormatUtil;
+
 /**
  * Modelo de tabela para a lista de arquivos ZPL de entrada selecionados.
  *
@@ -101,7 +103,7 @@ public class ZplFileTableModel extends AbstractTableModel {
             case 0 -> r.path.getFileName() != null
                     ? r.path.getFileName().toString()
                     : r.path.toString();
-            case 1 -> r.size >= 0 ? formatSize(r.size) : "—";
+            case 1 -> r.size >= 0 ? FormatUtil.formatSize(r.size) : "—";
             case 2 -> r.status;
             default -> null;
         };
@@ -115,15 +117,4 @@ public class ZplFileTableModel extends AbstractTableModel {
         }
     }
 
-    private static String formatSize(long bytes) {
-        if (bytes < 1024) {
-            return bytes + " B";
-        }
-        double kb = bytes / 1024.0;
-        if (kb < 1024) {
-            return String.format("%.1f KB", kb);
-        }
-        double mb = kb / 1024.0;
-        return String.format("%.1f MB", mb);
-    }
 }
